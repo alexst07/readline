@@ -18,6 +18,18 @@ class Prompt {
 
   void BackwardCursor();
 
+  void CursorToEnd();
+
+  void CursorToBegin();
+
+  void Delete();
+
+  void ToNextToken();
+
+  void ToBackwardToken();
+
+  void RemoveBackwardToken();
+
   inline const std::string& Str() const {
     return buf_.Str();
   }

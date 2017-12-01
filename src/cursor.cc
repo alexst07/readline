@@ -64,6 +64,10 @@ void Cursor::MoveForward(int n) {
 }
 
 void Cursor::MoveBackward(int n) {
+  if (pos_ == 0) {
+    return;
+  }
+
   pos_ -= n;
   MoveToPos(pos_);
 }

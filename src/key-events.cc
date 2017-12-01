@@ -14,9 +14,24 @@ std::string KeyEvents::Loop(const std::string& msg) {
     c = getchar();
 
     switch (c) {
+      case 8:  // CTRL+backspace
+        prompt.RemoveBackwardToken();
+        break;
+
       case 127:  // backspace
         prompt.Backspace();
         break;
+
+      case 27: {
+        unsigned char c1 = getchar();
+        if (c1 == 91) {
+          CommandsKey(prompt);
+        } else {  // case where ESQ key was pressed
+          c = c1;
+        }
+
+        break;
+      }
 
       default:
         prompt.AddChar(c);
@@ -24,6 +39,62 @@ std::string KeyEvents::Loop(const std::string& msg) {
   } while (c != '\n');
 
   return prompt.Str();
+}
+
+void KeyEvents::CommandsKey(Prompt& prompt) {
+  unsigned char c = getchar();
+
+  switch (c) {
+    case 67:  // right arrow key
+      prompt.AdvanceCursor();
+      break;
+
+    case 68:  // left arrow key
+      prompt.BackwardCursor();
+      break;
+
+    case 72:  // HOME key
+      prompt.CursorToBegin();
+      break;
+
+    case 70:  // END key
+      prompt.CursorToEnd();
+      break;
+
+    case 51: {
+      unsigned char c1 = getchar();
+      if (c1 == 126) {  // DELETE key
+        prompt.Delete();
+      }
+      break;
+    }
+
+    case 49: {
+      char c = getchar();
+      if (c == 59) {
+        CtrlCommandsKey(prompt);
+      }
+      break;
+    }
+  }
+}
+
+void KeyEvents::CtrlCommandsKey(Prompt& prompt) {
+  char c = getchar();
+
+  if (c == 53) {
+    char c = getchar();
+
+    switch (c) {
+      case 67:  // CTRL+RIGHT_ARROW
+        prompt.ToNextToken();
+        break;
+
+      case 68:  // CTRL+RIGHT_ARROW
+        prompt.ToBackwardToken();
+        break;
+    }
+  }
 }
 
 }  // namespace readline

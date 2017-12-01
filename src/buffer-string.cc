@@ -51,6 +51,58 @@ void BufferString::AddChar(char c, int n) {
   }
 }
 
+bool BufferString::IsTokenSeparator(char c) {
+  if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+      (c >= '0' && c <= '9')) {
+    return false;
+  }
+
+  return true;
+}
+
+int BufferString::EndTokenPos(int n) {
+  bool start_space = true;
+  int pos = n;
+
+  while ((start_space || !IsTokenSeparator(content_[pos])) &&
+      (pos <= static_cast<int>(content_.length()))) {
+    if (content_[pos] != ' ') {
+      start_space = false;
+    }
+
+    ++pos;
+  }
+
+  if (pos >= static_cast<int>(content_.length())) {
+    return content_.length();
+  }
+
+  return pos;
+}
+
+int BufferString::StartTokenPos(int n) {
+  if (n <= 1) {
+    return 0;
+  }
+
+  bool start_space = true;
+  int pos = n;
+
+  while ((start_space || !IsTokenSeparator(content_[pos - 1])) && (pos > 0)) {
+    if (content_[pos - 1] != ' ') {
+      start_space = false;
+    }
+
+    --pos;
+  }
+
+  return pos;
+}
+
+void BufferString::RemoveSubStr(int from, int to) {
+  content_ = content_.erase(from, to - from);
+}
+
 std::ostream& operator<<(std::ostream& stream, BufferString& buf_str) {
   stream  << buf_str.content_;
 

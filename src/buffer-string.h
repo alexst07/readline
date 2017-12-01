@@ -21,6 +21,14 @@ class BufferString {
 
   void AddChar(char c, int n);
 
+  bool IsTokenSeparator(char c);
+
+  int StartTokenPos(int n);
+
+  int EndTokenPos(int n);
+
+  void RemoveSubStr(int from, int to);
+
   const std::string& Str() const;
 
   friend BufferString operator+(const BufferString& bufstr, char c);
@@ -28,14 +36,6 @@ class BufferString {
   friend std::ostream& operator<<(std::ostream& stream, BufferString& buf_str);
 
   BufferString& operator+=(char c);
-
-  void IncrementNewLine() {
-    content_ += "\n";
-  }
-
-  void DecrementNewLine() {
-    content_.pop_back();
-  }
 
   inline int Length() const {
     return content_.length();

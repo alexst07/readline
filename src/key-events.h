@@ -12,6 +12,10 @@ class KeyEvents {
 
   std::string Loop(const std::string& msg);
 
+  void CommandsKey(Prompt& prompt);
+
+  void CtrlCommandsKey(Prompt& prompt);
+
  private:
 
 };
