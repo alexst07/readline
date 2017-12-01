@@ -30,6 +30,8 @@ class Prompt {
 
   void RemoveBackwardToken();
 
+  int NumOfLines();
+
   inline const std::string& Str() const {
     return buf_.Str();
   }
@@ -38,8 +40,6 @@ class Prompt {
   void EraseFromBeginToEnd();
 
   void Reprint();
-
-  int NumOfLines();
 
   int PosCursonOnBuf();
 
