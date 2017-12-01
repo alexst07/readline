@@ -2,6 +2,7 @@
 #define READLINE_PROMPT_H
 
 #include "buffer-string.h"
+#include "cursor.h"
 
 namespace readline {
 
@@ -30,10 +31,9 @@ class Prompt {
 
   int PosCursonOnBuf();
 
-  int start_col_;
-  int start_line_;
   std::string str_prompt_;
   BufferString buf_;
+  Cursor cursor_;
 };
 
 }  // namespace readline
