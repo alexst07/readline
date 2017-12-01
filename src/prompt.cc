@@ -27,6 +27,12 @@ void Prompt::Backspace() {
 
 void Prompt::AddChar(char c) {
   int char_pos = cursor_.GetPos();
+
+  if (cursor_.IsInLastPosition(buf_.Length())) {
+    cursor_.SetStartLine(cursor_.GetStartLine() - 1);
+    std::cout << '\n';
+  }
+
   buf_.AddChar(c, char_pos);
   Reprint();
   cursor_.MoveToPos(char_pos + 1);

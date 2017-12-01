@@ -68,6 +68,18 @@ void Cursor::MoveBackward(int n) {
   MoveToPos(pos_);
 }
 
+bool Cursor::IsInLastPosition(int n) {
+  int line = CalcLine(n) - 1 + start_line_;
+  int col = CalcCol(n);
+  TermSize term_size = Terminal::Size();
+
+  if ((line == term_size.lines) && (col == term_size.cols)) {
+    return true;
+  }
+
+  return false;
+}
+
 TermSize Terminal::Size() {
   static char termbuf[2048];
   char *termtype = getenv("TERM");
