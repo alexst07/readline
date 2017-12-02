@@ -51,10 +51,22 @@ void BufferString::AddChar(char c, int n) {
   }
 }
 
-bool BufferString::IsTokenSeparator(char c) {
+bool BufferString::IsTokenSeparator(int pos) {
+  if (pos >= static_cast<int>(content_.length()) || pos < 0) {
+    return true;
+  }
+
+  char c = content_[pos];
   if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
       (c >= '0' && c <= '9')) {
     return false;
+  }
+
+  if (pos > 1 && pos < static_cast<int>(content_.length() - 1)) {
+    if ((c == '\\' && content_[pos + 1] == ' ') ||
+        (c == ' ' && content_[pos - 1] == '\\')) {
+      return false;
+    }
   }
 
   return true;
@@ -64,7 +76,7 @@ int BufferString::EndTokenPos(int n) {
   bool start_space = true;
   int pos = n;
 
-  while ((start_space || !IsTokenSeparator(content_[pos])) &&
+  while ((start_space || !IsTokenSeparator(pos)) &&
       (pos <= static_cast<int>(content_.length()))) {
     if (content_[pos] != ' ') {
       start_space = false;
@@ -88,7 +100,7 @@ int BufferString::StartTokenPos(int n) {
   bool start_space = true;
   int pos = n;
 
-  while ((start_space || !IsTokenSeparator(content_[pos - 1])) && (pos > 0)) {
+  while ((start_space || !IsTokenSeparator(pos - 1)) && (pos > 0)) {
     if (content_[pos - 1] != ' ') {
       start_space = false;
     }
@@ -97,6 +109,22 @@ int BufferString::StartTokenPos(int n) {
   }
 
   return pos;
+}
+
+bool BufferString::IsEscapeSpace(int n) {
+  if (content_.length() <= 1) {
+    return false;
+  }
+
+  if (n > static_cast<int>(content_.length() - 1)) {
+    n = content_.length() - 1;
+  }
+
+  if (content_[n] == ' ' && content_[n] == '\\') {
+    return true;
+  }
+
+  return false;
 }
 
 void BufferString::RemoveSubStr(int from, int to) {

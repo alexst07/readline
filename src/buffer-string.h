@@ -21,13 +21,15 @@ class BufferString {
 
   void AddChar(char c, int n);
 
-  bool IsTokenSeparator(char c);
+  bool IsTokenSeparator(int pos);
 
   int StartTokenPos(int n);
 
   int EndTokenPos(int n);
 
   void RemoveSubStr(int from, int to);
+
+  bool IsEscapeSpace(int n);
 
   const std::string& Str() const;
 

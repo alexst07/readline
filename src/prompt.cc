@@ -46,6 +46,12 @@ void Prompt::AddChar(char c) {
 
   if (complete_.Showing()) {
     complete_.Show(buf_.Str(), cursor_.GetPos());
+
+    if (c == ' ') {
+      if (!buf_.IsEscapeSpace(char_pos)) {
+        complete_.Hide();
+      }
+    }
   }
 }
 
