@@ -10,7 +10,7 @@ class KeyEvents {
  public:
   KeyEvents() = default;
 
-  std::string Loop(const std::string& msg);
+  std::string Loop(const std::string& msg, FuncComplete&& fn);
 
   void CommandsKey(Prompt& prompt);
 

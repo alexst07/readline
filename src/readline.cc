@@ -10,7 +10,12 @@
 
 namespace readline {
 
+void Readline::SetCompleteFunc(FuncComplete&& fn) {
+  fn_complete_ = std::move(fn);
+}
+
 std::string Readline::Prompt(const std::string& prompt) {
+  FuncComplete fn(fn_complete_);
   struct termios old_tio, new_tio;
   KeyEvents key_events;
 
@@ -26,7 +31,7 @@ std::string Readline::Prompt(const std::string& prompt) {
   // set the new settings immediately
   tcsetattr(STDIN_FILENO,TCSANOW,&new_tio);
 
-  std::string line = key_events.Loop(prompt);
+  std::string line = key_events.Loop(prompt, std::move(fn));
 
   // restore the former settings
   tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);

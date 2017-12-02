@@ -6,8 +6,8 @@
 
 namespace readline {
 
-std::string KeyEvents::Loop(const std::string& msg) {
-  Prompt prompt(msg);
+std::string KeyEvents::Loop(const std::string& msg, FuncComplete&& fn) {
+  Prompt prompt(msg, std::move(fn));
   unsigned char c;
 
   do {
@@ -16,6 +16,10 @@ std::string KeyEvents::Loop(const std::string& msg) {
     switch (c) {
       case 8:  // CTRL+backspace
         prompt.RemoveBackwardToken();
+        break;
+
+      case 9: // TAB
+        prompt.AutoComplete();
         break;
 
       case 127:  // backspace

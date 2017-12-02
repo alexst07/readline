@@ -6,23 +6,29 @@
 #include <vector>
 #include <boost/variant.hpp>
 #include "cursor.h"
-#include "prompt.h"
 
 namespace readline {
+class Prompt;
 
 class CompleteResultFiles {};
 class CompleteResultDirs {};
 class CompleteResultDirsAndFiles {};
 
 class CompleteResultList {
+ public:
   CompleteResultList(std::vector<std::string>&& items)
       : items_(std::move(items)) {}
+
+  const std::vector<std::string> GetItems() const {
+    return items_;
+  }
 
  private:
   std::vector<std::string> items_;
 };
 
 class CompleteResultListDescr {
+ public:
   CompleteResultListDescr(
       std::vector<std::pair<std::string, std::string>>&& items)
       : items_(std::move(items)) {}
@@ -78,15 +84,14 @@ class CompleteList {
    Variant items_;
 };
 
+using FuncComplete =
+    std::function<CompleteList(const std::vector<std::string>&)>;
+
 class Complete {
  public:
-  using FuncType =
-      CompleteList(const std::vector<std::string>& params, bool new_param);
+  Complete(int start_line, FuncComplete&& fn, Prompt& prompt);
 
-  Complete(const std::string& line, int line_pos, int start_line,
-      FuncType&& fn, Cursor& cursor, Prompt& prompt);
-
-  void Show();
+  void Show(const std::string& line, int line_pos);
 
   void Hide();
 
@@ -98,17 +103,26 @@ class Complete {
 
   void SelUpItem();
 
+  inline bool Showing() const {
+    return show_;
+  }
+
  private:
-  void Print();
+  int Print(const std::string& line, int line_pos);
 
-  void PrintList(const std::vector<std::string>& list);
+  int PrintList(const std::vector<std::string>& list);
 
-  void PrintItemsList(const std::vector<std::string>& list, int nc, int len);
+  int PrintItemsList(const std::vector<std::string>& list, int nc, int len);
 
   void PrintListDescr(
       const std::vector<std::pair<std::string, std::string>>& list);
 
-  bool CheckNewArg();
+  bool CheckNewArg(const std::string& line, int line_pos);
+
+  std::vector<std::string> SplitArgs(const std::string& line, int line_pos);
+
+  std::vector<std::string> MatchArg(const std::string& arg,
+      std::vector<std::string> list);
 
   enum class ListDirType {
     FILES,
@@ -118,15 +132,15 @@ class Complete {
 
   std::vector<std::string> ListDir(const std::string& dir, ListDirType t);
 
-  std::string line_;
-  int line_pos_;
   int start_line_;
   int item_sel_;
   std::string complete_;
-  std::function<FuncType> fn_complete_;
+  FuncComplete fn_complete_;
   bool complete_token_;
   Cursor& cursor_;
   Prompt& prompt_;
+  int lines_show_;
+  bool show_;
 };
 
 }  // namespace readline

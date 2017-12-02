@@ -87,9 +87,14 @@ class Cursor {
   inline int CalcLine(int n) {
     TermSize term_size = Terminal::Size();
 
+    // with ceil, the line start at 1
     int line = static_cast<int>(std::ceil(static_cast<float>(n+1+start_col_)/
         static_cast<float>(term_size.cols)));
     return line;
+  }
+
+  inline int CalcAbsoluteLine(int n) {
+    return CalcLine(n) + start_line_ - 1;
   }
 
   // calculates the col where the value of n is

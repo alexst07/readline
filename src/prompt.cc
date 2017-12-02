@@ -4,12 +4,14 @@
 #include <iostream>
 #include <string>
 #include "cursor.h"
+#include "complete.h"
 
 namespace readline {
 
-Prompt::Prompt(const std::string& str_prompt)
+Prompt::Prompt(const std::string& str_prompt, FuncComplete&& fn)
     : str_prompt_(str_prompt)
-    , cursor_(GetCursorPosition().line, str_prompt_.length()) {
+    , cursor_(GetCursorPosition().line, str_prompt_.length())
+    , complete_(cursor_.GetStartLine(), std::move(fn), *this) {
   std::cout << str_prompt_ << std::flush;
   cursor_.MoveToPos(0);
 }
@@ -24,6 +26,10 @@ void Prompt::Backspace() {
   buf_.RemoveChar(char_pos - 1);
   Reprint();
   cursor_.MoveBackward(1);
+
+  if (complete_.Showing()) {
+    complete_.Show(buf_.Str(), cursor_.GetPos());
+  }
 }
 
 void Prompt::AddChar(char c) {
@@ -37,6 +43,10 @@ void Prompt::AddChar(char c) {
   buf_.AddChar(c, char_pos);
   Reprint();
   cursor_.MoveToPos(char_pos + 1);
+
+  if (complete_.Showing()) {
+    complete_.Show(buf_.Str(), cursor_.GetPos());
+  }
 }
 
 void Prompt::AdvanceCursor() {
@@ -104,8 +114,26 @@ void Prompt::RemoveBackwardToken() {
   cursor_.MoveToPos(pos);
 }
 
+void Prompt::AutoComplete() {
+  complete_.Show(buf_.Str(), cursor_.GetPos());
+}
+
 int Prompt::NumOfLines() {
   return cursor_.CalcLine(buf_.Length());
+}
+
+void Prompt::SetStartLine(int n) {
+  cursor_.SetStartLine(n);
+  Reprint();
+}
+
+void Prompt::AddLines(int n) {
+  for (int i = 0; i < n; i++) {
+    std::cout << '\n';
+  }
+
+  cursor_.SetStartLine(cursor_.GetStartLine() - n);
+  Reprint();
 }
 
 void Prompt::Reprint() {
