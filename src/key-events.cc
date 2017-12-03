@@ -49,12 +49,20 @@ void KeyEvents::CommandsKey(Prompt& prompt) {
   unsigned char c = getchar();
 
   switch (c) {
+    case 65:  // up arrow key
+      prompt.UpArrow();
+      break;
+
+    case 66:  // down arrow key
+      prompt.DownArrow();
+      break;
+
     case 67:  // right arrow key
-      prompt.AdvanceCursor();
+      prompt.RightArrow();
       break;
 
     case 68:  // left arrow key
-      prompt.BackwardCursor();
+      prompt.LeftArrow();
       break;
 
     case 72:  // HOME key

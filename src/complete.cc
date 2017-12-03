@@ -7,18 +7,21 @@
 #include <boost/filesystem.hpp>
 #include "cursor.h"
 #include "prompt.h"
+#include "scope-exit.h"
 
 namespace readline {
 
 Complete::Complete(int start_line, FuncComplete&& fn, Prompt& prompt)
     : start_line_(start_line)
-    , item_sel_(0)
+    , item_sel_(-1)
     , fn_complete_(std::move(fn))
     , complete_token_(false)
     , cursor_(prompt.GetCursorRef())
     , prompt_(prompt)
     , lines_show_(0)
-    , show_(false) {}
+    , show_(false)
+    , num_cols_(0)
+    , total_items_(0) {}
 
 void Complete::Show(const std::string& line, int line_pos) {
   if (show_) {
@@ -29,14 +32,27 @@ void Complete::Show(const std::string& line, int line_pos) {
   lines_show_ = Print(line, line_pos);
 }
 
+void Complete::Show() {
+  if (show_) {
+    CleanLines();
+  }
+
+  PrintList(items_);
+}
+
 void Complete::Hide() {
+  CleanLines();
+  show_ = false;
+  item_sel_ = -1;
+}
+
+void Complete::CleanLines() {
   for (int i = 0; i <= lines_show_; i++) {
     cursor_.MoveToAbsolute(cursor_.GetStartLine() + i +1, 1);
     std::cout << "\033[K";
   }
 
   cursor_.MoveToPos(cursor_.GetPos());
-  show_ = false;
 }
 
 int Complete::Print(const std::string& line, int line_pos) {
@@ -47,32 +63,40 @@ int Complete::Print(const std::string& line, int line_pos) {
     CompleteList list_result(fn_complete_(args));
 
     if (list_result.GetType() == CompleteList::Type::kList) {
-      const std::vector<std::string>& list = boost::get<CompleteResultList>(
-          list_result.GetItems()).GetItems();
+      items_ = boost::get<CompleteResultList>(list_result.GetItems())
+          .GetItems();
 
       if (last_arg.empty()) {
-        return PrintList(list);
+        return PrintList(items_);
       } else {
         // uses only item that match
-        std::vector<std::string> new_list = MatchArg(last_arg, list);
-        return PrintList(new_list);
+        items_ = MatchArg(last_arg, items_);
+        return PrintList(items_);
       }
     }
   } else {
-    std::vector<std::string> list = ListDir(".", ListDirType::FILES_DIR);
+    items_ = ListDir(".", ListDirType::FILES_DIR);
 
     if (last_arg.empty()) {
-      return PrintList(list);
+      return PrintList(items_);
     } else {
       // uses only item that match
-      std::vector<std::string> new_list = MatchArg(last_arg, list);
-      return PrintList(new_list);
+      items_ = MatchArg(last_arg, items_);
+      return PrintList(items_);
     }
   }
 }
 
 int Complete::PrintList(const std::vector<std::string>& list) {
   if (list.empty()) {
+    show_ = false;
+    return 0;
+  }
+
+  if (list.size() == 1) {
+    sel_content_ = list[0];
+    prompt_.ShowTip(list[0]);
+    show_ = false;
     return 0;
   }
 
@@ -111,6 +135,8 @@ int Complete::PrintList(const std::vector<std::string>& list) {
 int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
     int len) {
   int lines = 0;
+  num_cols_ = nc;
+  total_items_ = list.size();
 
   // calculates the number of needed lines
   int num_lines = static_cast<int>(std::ceil(
@@ -137,7 +163,13 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
     int pos_col = mod* len + (mod > 0? mod*2: 0);
     cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()+lines,
         pos_col + 1);
-    std::cout << list[i];
+
+    if (i == item_sel_) {
+      std::cout << "\e[48;5;7m" << list[i] << "\033[0m";
+      prompt_.ShowTip(list[i]);
+    } else {
+      std::cout << list[i];
+    }
   }
 
   cursor_.MoveToPos(cursor_.GetPos());
@@ -154,6 +186,97 @@ bool Complete::CheckNewArg(const std::string& line, int line_pos) {
   }
 
   return false;
+}
+
+void Complete::SelNextItem() {
+  auto cleanup = MakeScopeExit([&]() {
+    Show();
+  });
+  IgnoreUnused(cleanup);
+
+  if (item_sel_ < 0) {
+    item_sel_ = 0;
+  }
+
+  int sel = item_sel_ + 1;
+
+  if (sel >= total_items_) {
+    item_sel_ = 0;
+    return;
+  }
+
+  ++item_sel_;
+}
+
+void Complete::SelBackItem() {
+  auto cleanup = MakeScopeExit([&]() {
+    Show();
+  });
+  IgnoreUnused(cleanup);
+
+  if (item_sel_ < 0) {
+    item_sel_ = 0;
+  }
+
+  int sel = item_sel_ - 1;
+
+  if (sel < 0) {
+    item_sel_ = total_items_ - 1;
+    return;
+  }
+
+  --item_sel_;
+}
+
+void Complete::SelDownItem() {
+  auto cleanup = MakeScopeExit([&]() {
+    Show();
+  });
+  IgnoreUnused(cleanup);
+
+  if (item_sel_ < 0) {
+    item_sel_ = 0;
+    return;
+  }
+
+  int sel = item_sel_ + num_cols_;
+
+  if (sel == total_items_ - 1) {
+    item_sel_ = 0;
+    return;
+  }
+
+  if (sel >= total_items_) {
+    item_sel_ = total_items_ - 1;
+    return;
+  }
+
+  item_sel_ += num_cols_;
+}
+
+void Complete::SelUpItem() {
+  auto cleanup = MakeScopeExit([&]() {
+    Show();
+  });
+  IgnoreUnused(cleanup);
+
+  if (item_sel_ < 0) {
+    item_sel_ = 0;
+  }
+
+  int sel = item_sel_ - num_cols_;
+
+  if (item_sel_ == 0) {
+    item_sel_ = total_items_ - 1;
+    return;
+  }
+
+  if (sel < 0) {
+    item_sel_ = 0;
+    return;
+  }
+
+  item_sel_ -= num_cols_;
 }
 
 std::vector<std::string> Complete::SplitArgs(const std::string& line,
@@ -183,6 +306,11 @@ std::vector<std::string> Complete::MatchArg(const std::string& arg,
   return new_list;
 }
 
+std::string Complete::UseSelContent() {
+  std::string content = sel_content_;
+  sel_content_ = "";
+  return content;
+}
 
 std::vector<std::string> Complete::ListDir(const std::string& dir,
     ListDirType t) {

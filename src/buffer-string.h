@@ -31,6 +31,10 @@ class BufferString {
 
   bool IsEscapeSpace(int n);
 
+  bool IsLastToken(int n);
+
+  bool TokenStartWithSpace(int n);
+
   const std::string& Str() const;
 
   friend BufferString operator+(const BufferString& bufstr, char c);
@@ -38,6 +42,10 @@ class BufferString {
   friend std::ostream& operator<<(std::ostream& stream, BufferString& buf_str);
 
   BufferString& operator+=(char c);
+
+  char& operator[](int n) {
+    return content_[n];
+  }
 
   inline int Length() const {
     return content_.length();

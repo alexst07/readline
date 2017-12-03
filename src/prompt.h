@@ -15,6 +15,14 @@ class Prompt {
 
   void AddChar(char c);
 
+  void RightArrow();
+
+  void LeftArrow();
+
+  void UpArrow();
+
+  void DownArrow();
+
   void AdvanceCursor();
 
   void BackwardCursor();
@@ -37,12 +45,20 @@ class Prompt {
 
   void AddLines(int n);
 
+  void Esq();
+
+  void ShowTip(const std::string& tip);
+
   Cursor& GetCursorRef() {
     return cursor_;
   }
 
   inline const std::string& Str() const {
     return buf_.Str();
+  }
+
+  inline bool IsInCompleteMode() {
+    return complete_.Showing();
   }
 
   void SetStartLine(int n);
@@ -58,6 +74,8 @@ class Prompt {
   BufferString buf_;
   Cursor cursor_;
   Complete complete_;
+  bool tip_mode_;
+  std::string tip_string_;
 };
 
 }  // namespace readline

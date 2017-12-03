@@ -93,7 +93,11 @@ class Complete {
 
   void Show(const std::string& line, int line_pos);
 
+  void Show();
+
   void Hide();
+
+  void CleanLines();
 
   void SelNextItem();
 
@@ -102,6 +106,8 @@ class Complete {
   void SelDownItem();
 
   void SelUpItem();
+
+  std::string UseSelContent();
 
   inline bool Showing() const {
     return show_;
@@ -139,8 +145,24 @@ class Complete {
   bool complete_token_;
   Cursor& cursor_;
   Prompt& prompt_;
+
+  // how many lines was used in last show operation
   int lines_show_;
+
+  // a flag to indicate if the complete menu is being showed
   bool show_;
+
+  // string content of last selections
+  std::string sel_content_;
+
+  // numbers of cols of last show operation
+  int num_cols_;
+
+  // total items in list of last show operation
+  int total_items_;
+
+  // items of last show operation
+  std::vector<std::string> items_;
 };
 
 }  // namespace readline

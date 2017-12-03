@@ -58,6 +58,13 @@ void Cursor::MoveToPos(int n) {
   MoveToScape(line, col);
 }
 
+void Cursor::MoveOnlyCursorToPos(int n) {
+  int line = CalcLine(n) - 1 + start_line_;
+  int col = CalcCol(n);
+
+  MoveToScape(line, col);
+}
+
 void Cursor::MoveForward(int n) {
   pos_ += n;
   MoveToPos(pos_);

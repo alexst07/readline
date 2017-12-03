@@ -35,6 +35,10 @@ class Cursor {
   // the terminal cursor must be
   void MoveToPos(int n);
 
+  // move the pos_ to n, and calculate the new line and the new col where
+  // the terminal cursor must be, but doesn't update pos_
+  void MoveOnlyCursorToPos(int n);
+
   // move the terminator cursor to absolute value of line and col, it doesn't
   // update the pos_
   void MoveToAbsolute(int line, int col);

@@ -111,6 +111,16 @@ int BufferString::StartTokenPos(int n) {
   return pos;
 }
 
+bool BufferString::IsLastToken(int n) {
+  int pos = EndTokenPos(n);
+
+  if (pos == content_.length()) {
+    return true;
+  }
+
+  return false;
+}
+
 bool BufferString::IsEscapeSpace(int n) {
   if (content_.length() <= 1) {
     return false;

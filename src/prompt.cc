@@ -11,7 +11,8 @@ namespace readline {
 Prompt::Prompt(const std::string& str_prompt, FuncComplete&& fn)
     : str_prompt_(str_prompt)
     , cursor_(GetCursorPosition().line, str_prompt_.length())
-    , complete_(cursor_.GetStartLine(), std::move(fn), *this) {
+    , complete_(cursor_.GetStartLine(), std::move(fn), *this)
+    , tip_mode_(false) {
   std::cout << str_prompt_ << std::flush;
   cursor_.MoveToPos(0);
 }
@@ -47,11 +48,41 @@ void Prompt::AddChar(char c) {
   if (complete_.Showing()) {
     complete_.Show(buf_.Str(), cursor_.GetPos());
 
+    // if a space char is pressed, and this space was not escaped by \ char
+    // we have to hide the completation menu
     if (c == ' ') {
       if (!buf_.IsEscapeSpace(char_pos)) {
         complete_.Hide();
       }
     }
+  }
+}
+
+void Prompt::RightArrow() {
+  if (IsInCompleteMode()) {
+    complete_.SelNextItem();
+  } else {
+    AdvanceCursor();
+  }
+}
+
+void Prompt::LeftArrow() {
+  if (IsInCompleteMode()) {
+    complete_.SelBackItem();
+  } else {
+    BackwardCursor();
+  }
+}
+
+void Prompt::UpArrow() {
+  if (IsInCompleteMode()) {
+    complete_.SelUpItem();
+  }
+}
+
+void Prompt::DownArrow() {
+  if (IsInCompleteMode()) {
+    complete_.SelDownItem();
   }
 }
 
@@ -92,6 +123,7 @@ void Prompt::Delete() {
 }
 
 void Prompt::EraseFromBeginToEnd() {
+  // erase all lines that was used to show the prompt
   int num_lines = NumOfLines();
 
   for (int i = 0; i < num_lines; i++) {
@@ -121,7 +153,14 @@ void Prompt::RemoveBackwardToken() {
 }
 
 void Prompt::AutoComplete() {
+  std::string sel_content = complete_.UseSelContent();
   complete_.Show(buf_.Str(), cursor_.GetPos());
+}
+
+void Prompt::Esq() {
+  if (IsInCompleteMode()) {
+    complete_.Hide();
+  }
 }
 
 int Prompt::NumOfLines() {
@@ -134,12 +173,36 @@ void Prompt::SetStartLine(int n) {
 }
 
 void Prompt::AddLines(int n) {
+  // Add lines with \n, and put the start line on the correct place
   for (int i = 0; i < n; i++) {
     std::cout << '\n';
   }
 
   cursor_.SetStartLine(cursor_.GetStartLine() - n);
   Reprint();
+}
+
+void Prompt::ShowTip(const std::string& tip) {
+  int char_pos = cursor_.GetPos();
+
+  if (!buf_.IsLastToken(char_pos)) {
+    return;
+  }
+
+  // if the cursor is not in the end of the token, we have to verify the
+  // intersection between last token, and the tip, to avoid repeat part of
+  // the string
+  if (buf_[char_pos-1] != ' ') {
+
+  }
+
+
+  tip_mode_ = true;
+  int len = buf_.Length();
+  cursor_.MoveOnlyCursorToPos(len);
+  std::cout << "\e[38;5;239m" << tip << "\033[0m";
+
+  cursor_.MoveToPos(char_pos);
 }
 
 void Prompt::Reprint() {
