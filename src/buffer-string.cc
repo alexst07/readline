@@ -51,6 +51,39 @@ void BufferString::AddChar(char c, int n) {
   }
 }
 
+void BufferString::AddString(const std::string str, int n) {
+  if (content_.empty()) {
+    content_ = str;
+    return;
+  }
+
+  if (n >= int(content_.length())) {
+    content_ += str;
+  } else if (n == 0) {
+    content_ = str + content_;
+  } else if (n > 0 && n < int(content_.length())) {
+    content_ = content_.substr(0, n) + str + content_.substr(n);
+  }
+}
+
+void BufferString::ReplaceStringInterval(const std::string str,
+    int start, int end) {
+  if (content_.empty()) {
+    content_ = str;
+    return;
+  }
+
+  if (end >= int(content_.length()) && start <= 0) {
+    content_ = str;
+  } else if (end >= int(content_.length())) {
+    content_ = content_.substr(0, start) + str;
+  } else if (start <= 0) {
+    content_ = str + content_.substr(end);
+  } else {
+    content_ = content_.substr(0, start) + str + content_.substr(end);
+  }
+}
+
 bool BufferString::IsTokenSeparator(int pos) {
   if (pos >= static_cast<int>(content_.length()) || pos < 0) {
     return true;
@@ -144,11 +177,26 @@ int BufferString::StartArgPos(int n) {
 
   int pos = n;
 
+  // to avoid problems in the case where you have spaces in front of the
+  // argument, and start arg will get the next arg, and the arg we want
+  // is the arg before
+  if (pos > 0) {
+    if (content_[pos] == ' ' && content_[pos - 1] != ' ') {
+      --pos;
+    } else if (content_[pos] == ' ' && content_[pos - 1] == ' ') {
+      // if the current selected char is a whitespace, and the back char
+      // is a whitespace too, return the current position
+      return pos;
+    }
+  }
+
   while ((content_[pos] != ' ' ||IsEscapeSpace(pos)) && (pos > 0)) {
     --pos;
   }
 
-  return pos;
+  // when pos is not zero, is counts the whitespace
+  // so it 'eat' one whitespace
+  return (pos > 0? pos + 1:0);
 }
 
 int BufferString::EndArgPos(int n) {

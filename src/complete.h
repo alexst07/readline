@@ -91,7 +91,7 @@ class Complete {
  public:
   Complete(int start_line, FuncComplete&& fn, Prompt& prompt);
 
-  void Show(const std::string& line, int line_pos);
+  void Show(const std::vector<std::string>& args, bool show_always = false);
 
   void Show();
 
@@ -109,12 +109,26 @@ class Complete {
 
   std::string UseSelContent();
 
+  void SelectFirstItem();
+
+  int ItemSelected() const {
+    return item_sel_;
+  }
+
+  bool IsAnyItemSelected() const {
+    return item_sel_ >= 0? true:false;
+  }
+
   inline bool Showing() const {
     return show_;
   }
 
+  inline int ListSize() const {
+    return items_.size();
+  }
+
  private:
-  int Print(const std::string& line, int line_pos);
+  int Print(const std::vector<std::string>& args);
 
   int PrintList(const std::vector<std::string>& list);
 
@@ -122,21 +136,6 @@ class Complete {
 
   void PrintListDescr(
       const std::vector<std::pair<std::string, std::string>>& list);
-
-  bool CheckNewArg(const std::string& line, int line_pos);
-
-  std::vector<std::string> SplitArgs(const std::string& line, int line_pos);
-
-  std::vector<std::string> MatchArg(const std::string& arg,
-      std::vector<std::string> list);
-
-  enum class ListDirType {
-    FILES,
-    DIR,
-    FILES_DIR
-  };
-
-  std::vector<std::string> ListDir(const std::string& dir, ListDirType t);
 
   int start_line_;
   int item_sel_;
@@ -163,6 +162,9 @@ class Complete {
 
   // items of last show operation
   std::vector<std::string> items_;
+
+  // if the list must be showed, even when there is only one element
+  bool show_always_;
 };
 
 }  // namespace readline

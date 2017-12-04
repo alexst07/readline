@@ -5,6 +5,7 @@
 #include <string>
 #include "cursor.h"
 #include "complete.h"
+#include "utils.h"
 
 namespace readline {
 
@@ -15,6 +16,27 @@ Prompt::Prompt(const std::string& str_prompt, FuncComplete&& fn)
     , tip_mode_(false) {
   std::cout << str_prompt_ << std::flush;
   cursor_.MoveToPos(0);
+}
+
+void Prompt::Enter() {
+  if (IsInCompleteMode()) {
+    EnterCompleteMode();
+  } else if (tip_mode_) {
+    AcceptTip();
+  }
+}
+
+void Prompt::EnterCompleteMode() {
+  int char_pos = cursor_.GetPos();
+  int start_word = buf_.StartArgPos(char_pos);
+  int end_word = buf_.EndArgPos(char_pos);
+  std::string str_comp = complete_.UseSelContent();
+  buf_.ReplaceStringInterval(str_comp, start_word, end_word);
+  complete_.Hide();
+  end_word = buf_.EndArgPos(char_pos);
+  HideTip();
+  Reprint();
+  cursor_.MoveToPos(end_word);
 }
 
 void Prompt::Backspace() {
@@ -29,7 +51,9 @@ void Prompt::Backspace() {
   cursor_.MoveBackward(1);
 
   if (complete_.Showing()) {
-    complete_.Show(buf_.Str(), cursor_.GetPos());
+    std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
+    bool show_always = AlwaysShowComplete();
+    complete_.Show(args, show_always);
   }
 }
 
@@ -46,7 +70,9 @@ void Prompt::AddChar(char c) {
   cursor_.MoveToPos(char_pos + 1);
 
   if (complete_.Showing()) {
-    complete_.Show(buf_.Str(), cursor_.GetPos());
+    std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
+    bool show_always = AlwaysShowComplete();
+    complete_.Show(args, show_always);
 
     // if a space char is pressed, and this space was not escaped by \ char
     // we have to hide the completation menu
@@ -61,12 +87,18 @@ void Prompt::AddChar(char c) {
 void Prompt::RightArrow() {
   if (IsInCompleteMode()) {
     complete_.SelNextItem();
+  } else if (tip_mode_) {
+    AcceptTip();
   } else {
     AdvanceCursor();
   }
 }
 
 void Prompt::LeftArrow() {
+  if (tip_mode_) {
+    HideTip();
+  }
+
   if (IsInCompleteMode()) {
     complete_.SelBackItem();
   } else {
@@ -75,12 +107,20 @@ void Prompt::LeftArrow() {
 }
 
 void Prompt::UpArrow() {
+  if (tip_mode_) {
+    HideTip();
+  }
+
   if (IsInCompleteMode()) {
     complete_.SelUpItem();
   }
 }
 
 void Prompt::DownArrow() {
+  if (tip_mode_) {
+    HideTip();
+  }
+
   if (IsInCompleteMode()) {
     complete_.SelDownItem();
   }
@@ -152,9 +192,36 @@ void Prompt::RemoveBackwardToken() {
   cursor_.MoveToPos(pos);
 }
 
+void Prompt::Tab() {
+  // if the complete menu is begin showed
+  if (IsInCompleteMode()) {
+    // check if any item was selected
+    if (complete_.IsAnyItemSelected()) {
+      // if the list of menu has only one element
+      if (complete_.ListSize() == 1) {
+        // select the option and complete on prompt
+        EnterCompleteMode();
+      } else {
+        // if there are more than one element, select next element
+        complete_.SelNextItem();
+      }
+    } else {
+      // if no element was selected, select the first element
+      complete_.SelectFirstItem();
+    }
+  } else if (tip_mode_) {
+    AcceptTip();
+  } else {
+    AutoComplete();
+  }
+}
+
 void Prompt::AutoComplete() {
   std::string sel_content = complete_.UseSelContent();
-  complete_.Show(buf_.Str(), cursor_.GetPos());
+  std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
+
+  bool show_always = AlwaysShowComplete();
+  complete_.Show(args, show_always);
 }
 
 void Prompt::Esq() {
@@ -194,14 +261,31 @@ void Prompt::ShowTip(std::string tip) {
   // the string
   std::string trim_token = buf_.GetTrimToken(char_pos);
   int find_pos = tip.find(trim_token);
-  tip = tip.substr(find_pos + trim_token.length());
+  tip_string_ = tip.substr(find_pos + trim_token.length());
 
   tip_mode_ = true;
   int len = buf_.Length();
   cursor_.MoveOnlyCursorToPos(len);
-  std::cout << "\e[38;5;239m" << tip << "\033[0m";
+  std::cout << "\e[38;5;239m" << tip_string_ << "\033[0m";
 
   cursor_.MoveToPos(char_pos);
+}
+
+void Prompt::AcceptTip() {
+  // tip is only showed on last token, so we have only to add the tip string
+  // to the last token
+  buf_.AddString(tip_string_, buf_.Length());
+  tip_string_ = "";
+  HideTip();
+  cursor_.MoveToPos(buf_.Length());
+}
+
+void Prompt::HideTip() {
+  int char_pos = cursor_.GetPos();
+  Reprint();
+  cursor_.MoveToPos(char_pos);
+  tip_string_ = "";
+  tip_mode_ = false;
 }
 
 void Prompt::Reprint() {

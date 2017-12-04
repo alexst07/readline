@@ -11,7 +11,13 @@ std::string KeyEvents::Loop(const std::string& msg, FuncComplete&& fn) {
   unsigned char c;
 
   do {
+  START:
     c = getchar();
+
+    if (c == '\n') {
+      prompt.Enter();
+      goto START;
+    }
 
     switch (c) {
       case 8:  // CTRL+backspace
@@ -19,7 +25,7 @@ std::string KeyEvents::Loop(const std::string& msg, FuncComplete&& fn) {
         break;
 
       case 9: // TAB
-        prompt.AutoComplete();
+        prompt.Tab();
         break;
 
       case 127:  // backspace

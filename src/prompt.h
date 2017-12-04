@@ -11,6 +11,8 @@ class Prompt {
  public:
   Prompt(const std::string& str_prompt, FuncComplete&& fn);
 
+  void Enter();
+
   void Backspace();
 
   void AddChar(char c);
@@ -39,6 +41,10 @@ class Prompt {
 
   void RemoveBackwardToken();
 
+  void Tab();
+
+  void EnterCompleteMode();
+
   void AutoComplete();
 
   int NumOfLines();
@@ -48,6 +54,10 @@ class Prompt {
   void Esq();
 
   void ShowTip(std::string tip);
+
+  void HideTip();
+
+  void AcceptTip();
 
   Cursor& GetCursorRef() {
     return cursor_;
@@ -69,6 +79,15 @@ class Prompt {
   void Reprint();
 
   int PosCursonOnBuf();
+
+  inline bool AlwaysShowComplete() {
+    bool show_always = false;
+    if (cursor_.GetPos() != buf_.Length()) {
+      show_always = true;
+    }
+
+    return show_always;
+  }
 
   std::string str_prompt_;
   BufferString buf_;

@@ -3,11 +3,10 @@
 #include <string>
 #include <functional>
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include "cursor.h"
 #include "prompt.h"
 #include "scope-exit.h"
+#include "utils.h"
 
 namespace readline {
 
@@ -21,15 +20,17 @@ Complete::Complete(int start_line, FuncComplete&& fn, Prompt& prompt)
     , lines_show_(0)
     , show_(false)
     , num_cols_(0)
-    , total_items_(0) {}
+    , total_items_(0)
+    , show_always_(false) {}
 
-void Complete::Show(const std::string& line, int line_pos) {
+void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   if (show_) {
     Hide();
   }
 
   show_ = true;
-  lines_show_ = Print(line, line_pos);
+  show_always_ = show_always;
+  lines_show_ = Print(args);
 }
 
 void Complete::Show() {
@@ -55,8 +56,7 @@ void Complete::CleanLines() {
   cursor_.MoveToPos(cursor_.GetPos());
 }
 
-int Complete::Print(const std::string& line, int line_pos) {
-  std::vector<std::string> args = SplitArgs(line, line_pos);
+int Complete::Print(const std::vector<std::string>& args) {
   std::string last_arg = args.back();
 
   if (fn_complete_) {
@@ -93,7 +93,9 @@ int Complete::PrintList(const std::vector<std::string>& list) {
     return 0;
   }
 
-  if (list.size() == 1) {
+  // don't show the list if there is only one element, and show_always_ is false
+  // on this case, we only show the tip for the user
+  if (list.size() == 1 && !show_always_) {
     sel_content_ = list[0];
     prompt_.ShowTip(list[0]);
     show_ = false;
@@ -165,6 +167,7 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
         pos_col + 1);
 
     if (i == item_sel_) {
+      sel_content_ = list[i];
       std::cout << "\e[48;5;7m" << list[i] << "\033[0m";
       prompt_.ShowTip(list[i]);
     } else {
@@ -176,16 +179,13 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
   return lines;
 }
 
-bool Complete::CheckNewArg(const std::string& line, int line_pos) {
-  if (line_pos == 0) {
-    return true;
-  }
+void Complete::SelectFirstItem() {
+  auto cleanup = MakeScopeExit([&]() {
+    Show();
+  });
+  IgnoreUnused(cleanup);
 
-  if (line[line_pos - 1] == ' ') {
-    return true;
-  }
-
-  return false;
+  item_sel_ = 0;
 }
 
 void Complete::SelNextItem() {
@@ -279,65 +279,10 @@ void Complete::SelUpItem() {
   item_sel_ -= num_cols_;
 }
 
-std::vector<std::string> Complete::SplitArgs(const std::string& line,
-    int line_pos) {
-  std::vector<std::string> args;
-  std::string sub = line.substr(0, line_pos);
-  boost::split(args, sub, boost::algorithm::is_space());
-  bool new_arg = CheckNewArg(line, line_pos);
-
-  if (new_arg) {
-    args.push_back("");
-  }
-
-  return args;
-}
-
-std::vector<std::string> Complete::MatchArg(const std::string& arg,
-    std::vector<std::string> list) {
-  std::vector<std::string> new_list;
-
-  for (const auto& item: list) {
-    if (item.find(arg) == 0) {
-      new_list.push_back(item);
-    }
-  }
-
-  return new_list;
-}
-
 std::string Complete::UseSelContent() {
   std::string content = sel_content_;
   sel_content_ = "";
   return content;
-}
-
-std::vector<std::string> Complete::ListDir(const std::string& dir,
-    ListDirType t) {
-  namespace fs = boost::filesystem;
-
-  std::vector<std::string> list;
-  fs::path p(dir);
-  fs::directory_iterator end_itr;
-
-  for (fs::directory_iterator itr(p); itr != end_itr; ++itr) {
-    if (t == ListDirType::FILES) {
-      if (fs::is_regular_file(itr->path())) {
-        std::string current_file = itr->path().string();
-        list.push_back(current_file);
-      }
-    } else if (t == ListDirType::DIR) {
-      if (fs::is_directory(itr->path())) {
-        std::string current_file = itr->path().string();
-        list.push_back(current_file);
-      }
-    } else {
-      std::string current_file = itr->path().string();
-      list.push_back(current_file);
-    }
-  }
-
-  return list;
 }
 
 }  // namespace readline

@@ -21,6 +21,10 @@ class BufferString {
 
   void AddChar(char c, int n);
 
+  void AddString(const std::string str, int n);
+
+  void ReplaceStringInterval(const std::string str, int start, int end);
+
   bool IsTokenSeparator(int pos);
 
   int StartTokenPos(int n);
