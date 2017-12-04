@@ -33,7 +33,12 @@ class BufferString {
 
   bool IsLastToken(int n);
 
-  bool TokenStartWithSpace(int n);
+  // arg is any sequence of chars seperated by spaces
+  int StartArgPos(int n);
+
+  int EndArgPos(int n);
+
+  std::string GetTrimToken(int n);
 
   const std::string& Str() const;
 

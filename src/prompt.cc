@@ -182,20 +182,19 @@ void Prompt::AddLines(int n) {
   Reprint();
 }
 
-void Prompt::ShowTip(const std::string& tip) {
+void Prompt::ShowTip(std::string tip) {
   int char_pos = cursor_.GetPos();
 
-  if (!buf_.IsLastToken(char_pos)) {
+  if (cursor_.GetPos() != buf_.Length()) {
     return;
   }
 
   // if the cursor is not in the end of the token, we have to verify the
   // intersection between last token, and the tip, to avoid repeat part of
   // the string
-  if (buf_[char_pos-1] != ' ') {
-
-  }
-
+  std::string trim_token = buf_.GetTrimToken(char_pos);
+  int find_pos = tip.find(trim_token);
+  tip = tip.substr(find_pos + trim_token.length());
 
   tip_mode_ = true;
   int len = buf_.Length();

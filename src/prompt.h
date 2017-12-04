@@ -47,7 +47,7 @@ class Prompt {
 
   void Esq();
 
-  void ShowTip(const std::string& tip);
+  void ShowTip(std::string tip);
 
   Cursor& GetCursorRef() {
     return cursor_;

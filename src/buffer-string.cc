@@ -137,6 +137,59 @@ bool BufferString::IsEscapeSpace(int n) {
   return false;
 }
 
+int BufferString::StartArgPos(int n) {
+  if (n <= 1) {
+    return 0;
+  }
+
+  int pos = n;
+
+  while ((content_[pos] != ' ' ||IsEscapeSpace(pos)) && (pos > 0)) {
+    --pos;
+  }
+
+  return pos;
+}
+
+int BufferString::EndArgPos(int n) {
+  int pos = n;
+
+  while ((content_[pos] != ' ' ||IsEscapeSpace(pos)) &&
+      (pos <= static_cast<int>(content_.length()))) {
+    ++pos;
+  }
+
+  if (pos >= static_cast<int>(content_.length())) {
+    return content_.length();
+  }
+
+  return pos;
+}
+
+std::string BufferString::GetTrimToken(int n) {
+  bool escaped = false;
+  int start = StartArgPos(n);
+  int end = EndArgPos(n);
+  std::string str = "";
+
+  for (int i = start; i < end; i++) {
+    if (content_[i] == ' ' && !escaped) {
+      continue;
+    }
+
+    if (i < end - 1 ) {
+      if (content_[i] == '\\' && content_[i + 1] == ' ') {
+        escaped = true;
+        continue;
+      }
+    }
+
+    str += content_[i];
+  }
+
+  return str;
+}
+
 void BufferString::RemoveSubStr(int from, int to) {
   content_ = content_.erase(from, to - from);
 }
