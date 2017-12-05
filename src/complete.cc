@@ -27,6 +27,7 @@ Complete::Complete(int start_line, FuncComplete&& fn, Prompt& prompt)
     , has_more_(false) {}
 
 void Complete::Show(const std::vector<std::string>& args, bool show_always) {
+  int pos = cursor_.GetPos();
   if (show_) {
     Hide();
   }
@@ -34,14 +35,17 @@ void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   show_ = true;
   show_always_ = show_always;
   lines_show_ = Print(args);
+  cursor_.MoveToPos(pos);
 }
 
 void Complete::Show() {
+  int pos = cursor_.GetPos();
   if (show_) {
     CleanLines();
   }
 
-  PrintList(items_);
+  lines_show_ = PrintList(items_);
+  cursor_.MoveToPos(pos);
 }
 
 void Complete::Hide() {
@@ -55,8 +59,6 @@ void Complete::CleanLines() {
     cursor_.MoveToAbsolute(cursor_.GetStartLine() + i +1, 1);
     std::cout << "\033[K";
   }
-
-  cursor_.MoveToPos(cursor_.GetPos());
 }
 
 int Complete::Print(const std::vector<std::string>& args) {
@@ -171,12 +173,11 @@ int Complete::PrintList(const std::vector<std::string>& list) {
   }
 
   TermSize term_size = Terminal::Size();
-  int ncols = term_size.cols / len;
+
+  // we add by 3, because we want 3 white space between each item
+  int ncols = term_size.cols / (len + 3);
 
   if (ncols > 1) {
-    // calcualte the new ncols, at this time we multiply 3*ncols, because
-    // this is the amount of white spaces to separate the items
-    ncols = (term_size.cols - 3*ncols)/len;
     return PrintItemsList(list, ncols, len);
   } else {
     int lines = 0;
@@ -192,7 +193,6 @@ int Complete::PrintList(const std::vector<std::string>& list) {
       ++lines;
     }
 
-    cursor_.MoveToPos(cursor_.GetPos());
     return lines;
   }
 }
@@ -212,6 +212,10 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
   int pos_line = prompt_.GetCursorRef().CalcAbsoluteLine(
       prompt_.Str().length());
 
+  // calculate the number of lines, and how many lines we will need to add
+  // '\n' char
+  num_lines = num_lines > CalcMaxLines()? CalcMaxLines(): num_lines;
+
   if (pos_line + num_lines > term_size.lines) {
     int num_add_lines = term_size.lines - pos_line + num_lines;
     prompt_.AddLines(num_add_lines);
@@ -225,18 +229,16 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
       // clean the line
       std::cout << "\033[K";
 
-      if (lines > CalcMaxLines()) {
+      if (lines >= CalcMaxLines()) {
         PrintMoreOpt(item_sel_ == kMore);
         return lines;
-      } else {
-        has_more_ = false;
       }
     }
 
-    // show the items side by side, I multiply i by 2 to keep two spaces
+    // show the items side by side, I multiply i by 3 to keep two spaces
     // between each item
     int mod = i%nc;
-    int pos_col = mod* len + (mod > 0? mod*2: 0);
+    int pos_col = mod* len + (mod > 0? mod*3: 0);
     cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()+lines,
         pos_col + 1);
 
@@ -249,7 +251,7 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
     }
   }
 
-  cursor_.MoveToPos(cursor_.GetPos());
+  has_more_ = false;
   return lines;
 }
 
@@ -272,9 +274,16 @@ void Complete::SelNextItem() {
     item_sel_ = 0;
   }
 
+  int total;
+  if (has_more_) {
+    total = (lines_show_ - 1)*num_cols_;
+  } else {
+    total = total_items_;
+  }
+
   int sel = item_sel_ + 1;
 
-  if (sel >= total_items_) {
+  if (sel >= total) {
     if (has_more_) {
       item_sel_ = kMore;
       return;
@@ -308,30 +317,51 @@ void Complete::SelBackItem() {
 }
 
 void Complete::SelDownItem() {
-  auto cleanup = MakeScopeExit([&]() {
+  auto show = MakeScopeExit([&]() {
     Show();
   });
-  IgnoreUnused(cleanup);
+  IgnoreUnused(show);
 
   if (item_sel_ < 0) {
     item_sel_ = 0;
     return;
   }
 
-  int sel = item_sel_ + num_cols_;
-
-  if (sel == total_items_ - 1) {
-    if (has_more_) {
-      item_sel_ = kMore;
-      return;
-    } else {
-      item_sel_ = 0;
-      return;
-    }
+  int total;
+  if (has_more_) {
+    total = (lines_show_ - 1)*num_cols_;
+  } else {
+    total = total_items_;
   }
 
-  if (sel >= total_items_) {
-    item_sel_ = total_items_ - 1;
+  int sel = item_sel_ + num_cols_;
+
+  if (item_sel_ == total - 1) {
+    if (has_more_) {
+      item_sel_ = kMore;
+    } else {
+      // if all items was showed, we have to check in which collunm we are
+      // because if we are not in last collunm, we can't go back to start
+      // in fact we have to advance to next collunm
+      if (item_sel_ % num_cols_ == num_cols_ - 1) {
+        item_sel_ = 0;
+      } else {
+        item_sel_ = item_sel_%num_cols_ + 1;
+      }
+    }
+
+    return;
+  }
+
+  if (sel >= total) {
+    if (item_sel_%num_cols_ == 0 && has_more_) {
+      item_sel_ = kMore;
+    } else if (item_sel_%num_cols_ == num_cols_ - 1){
+      item_sel_ = 0;
+    } else {
+      item_sel_ = item_sel_%num_cols_ + 1;
+    }
+
     return;
   }
 
@@ -346,6 +376,7 @@ void Complete::SelUpItem() {
 
   if (item_sel_ < 0) {
     item_sel_ = 0;
+    return;
   }
 
   int sel = item_sel_ - num_cols_;
@@ -356,7 +387,8 @@ void Complete::SelUpItem() {
   }
 
   if (sel < 0) {
-    item_sel_ = 0;
+    item_sel_ = (item_sel_%num_cols_)*(has_more_?
+        lines_show_ - 1: lines_show_);
     return;
   }
 
@@ -383,8 +415,6 @@ void Complete::PrintMoreOpt(bool selected) {
   } else {
     std::cout << "[[more]]";
   }
-
-  cursor_.MoveToPos(cursor_.GetPos());
 }
 
 }  // namespace readline
