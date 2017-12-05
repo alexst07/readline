@@ -3,8 +3,10 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <tuple>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+
 
 namespace readline {
 
@@ -72,6 +74,29 @@ std::vector<std::string> MatchArg(const std::string& arg,
   }
 
   return new_list;
+}
+
+std::tuple<std::string, std::string> ParserPath(const std::string& arg) {
+  std::vector<std::string> elements;
+  std::string path = "";
+  std::string last;
+
+  for(auto& part : boost::filesystem::path(arg)) {
+    elements.push_back(part.filename().string());
+  }
+
+  last = elements.back();
+  elements.pop_back();
+
+  for (auto& e : elements) {
+    if (e != "/") {
+      path += e + "/";
+    } else {
+      path += e;
+    }
+  }
+
+  return std::tuple<std::string, std::string>(path, last);
 }
 
 }

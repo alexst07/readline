@@ -21,6 +21,9 @@ std::vector<std::string> ListDir(const std::string& dir, ListDirType t);
 
 std::vector<std::string> MatchArg(const std::string& arg,
     std::vector<std::string> list);
+
+std::tuple<std::string, std::string> ParserPath(const std::string& arg);
+
 }
 
 #endif  // READLINE_UTILS_H
