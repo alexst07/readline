@@ -95,6 +95,7 @@ class Prompt {
   Complete complete_;
   bool tip_mode_;
   std::string tip_string_;
+  std::string original_tip_string_;
 };
 
 }  // namespace readline

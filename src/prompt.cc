@@ -27,10 +27,23 @@ void Prompt::Enter() {
 }
 
 void Prompt::EnterCompleteMode() {
+  // get the argument
   int char_pos = cursor_.GetPos();
   int start_word = buf_.StartArgPos(char_pos);
   int end_word = buf_.EndArgPos(char_pos);
+
+  // use the content of menu that was selected
   std::string str_comp = complete_.UseSelContent();
+
+  // only complete if the argument is part of the selected option text
+  std::string trim_token = buf_.GetTrimToken(char_pos);
+  int find_pos = str_comp.find(trim_token);
+
+  if (find_pos == std::string::npos) {
+    return;
+  }
+
+  // replace the trim token by the selected option
   buf_.ReplaceStringInterval(str_comp, start_word, end_word);
   complete_.Hide();
   end_word = buf_.EndArgPos(char_pos);
@@ -68,6 +81,10 @@ void Prompt::AddChar(char c) {
   buf_.AddChar(c, char_pos);
   Reprint();
   cursor_.MoveToPos(char_pos + 1);
+
+  if (tip_mode_) {
+    ShowTip(original_tip_string_);
+  }
 
   if (complete_.Showing()) {
     std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
@@ -253,14 +270,24 @@ void Prompt::ShowTip(std::string tip) {
   int char_pos = cursor_.GetPos();
 
   if (cursor_.GetPos() != buf_.Length()) {
+    // assign false to tip_mode_ to avoid complete with tab
+    tip_mode_ = false;
     return;
   }
 
   // if the cursor is not in the end of the token, we have to verify the
   // intersection between last token, and the tip, to avoid repeat part of
   // the string
+  original_tip_string_ = tip;
   std::string trim_token = buf_.GetTrimToken(char_pos);
   int find_pos = tip.find(trim_token);
+
+  if (find_pos == std::string::npos) {
+    // assign false to tip_mode_ to avoid complete with tab
+    tip_mode_ = false;
+    return;
+  }
+
   tip_string_ = tip.substr(find_pos + trim_token.length());
 
   tip_mode_ = true;
