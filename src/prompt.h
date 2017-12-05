@@ -55,6 +55,8 @@ class Prompt {
 
   void ShowTip(std::string tip);
 
+  void ShowTipForPath(std::string tip);
+
   void HideTip();
 
   void AcceptTip();

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <boost/filesystem.hpp>
 #include "cursor.h"
 #include "complete.h"
 #include "utils.h"
@@ -35,12 +36,30 @@ void Prompt::EnterCompleteMode() {
   // use the content of menu that was selected
   std::string str_comp = complete_.UseSelContent();
 
-  // only complete if the argument is part of the selected option text
-  std::string trim_token = buf_.GetTrimToken(char_pos);
-  int find_pos = str_comp.find(trim_token);
+  // if it is tip for path, we have to handle different from a normal token
+  // we have to calculate intersection string with last part of path
+  if (complete_.IsPathComplete()) {
+    // get the argument only until where is the cursor, becuase we want
+    // eliminate the rest of the path
+    std::string trim_token = buf_.GetSlice(start_word, char_pos);
+    std::string arg_path_init;
+    std::string last_part;
+    size_t last_bar_pos = trim_token.find_last_of("/");
 
-  if (find_pos == std::string::npos) {
-    return;
+    if (last_bar_pos != std::string::npos) {
+      arg_path_init = trim_token.substr(0, last_bar_pos + 1);
+    }
+
+    // insert '/' on the end of directory
+    str_comp = DirectoryFormat(arg_path_init + str_comp);
+  } else {
+    // only complete if the argument is part of the selected option text
+    std::string trim_token = buf_.GetTrimToken(char_pos);
+    int find_pos = str_comp.find(trim_token);
+
+    if (find_pos == std::string::npos) {
+      return;
+    }
   }
 
   // replace the trim token by the selected option
@@ -84,7 +103,11 @@ void Prompt::AddChar(char c) {
 
   if (tip_mode_) {
     ShowTip(original_tip_string_);
+  } else {
+    std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
+    complete_.CompleteTip(args);
   }
+
 
   if (complete_.Showing()) {
     std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
@@ -206,6 +229,13 @@ void Prompt::RemoveBackwardToken() {
   int pos = buf_.StartTokenPos(char_pos);
   buf_.RemoveSubStr(pos, char_pos);
   Reprint();
+
+  if (complete_.Showing()) {
+    std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
+    bool show_always = AlwaysShowComplete();
+    complete_.Show(args, show_always);
+  }
+
   cursor_.MoveToPos(pos);
 }
 
@@ -275,11 +305,20 @@ void Prompt::ShowTip(std::string tip) {
     return;
   }
 
+  original_tip_string_ = tip;
+  std::string trim_token = buf_.GetTrimToken(char_pos);
+
+  // if it is tip for path, we have to handle different from a normal token
+  // we have to calculate intersection string with last part of path
+  if (complete_.IsPathComplete()) {
+    std::string last_part;
+    std::tie(std::ignore, trim_token) = ParserPath(trim_token,
+        /*supress_point*/ true);
+  }
+
   // if the cursor is not in the end of the token, we have to verify the
   // intersection between last token, and the tip, to avoid repeat part of
   // the string
-  original_tip_string_ = tip;
-  std::string trim_token = buf_.GetTrimToken(char_pos);
   int find_pos = tip.find(trim_token);
 
   if (find_pos == std::string::npos) {
@@ -292,6 +331,8 @@ void Prompt::ShowTip(std::string tip) {
 
   tip_mode_ = true;
   int len = buf_.Length();
+
+  Reprint();
   cursor_.MoveOnlyCursorToPos(len);
   std::cout << "\e[38;5;239m" << tip_string_ << "\033[0m";
 
@@ -301,7 +342,16 @@ void Prompt::ShowTip(std::string tip) {
 void Prompt::AcceptTip() {
   // tip is only showed on last token, so we have only to add the tip string
   // to the last token
+  if (complete_.IsPathComplete()) {
+    // insert '/' on the end of directory
+    std::string str_dir = buf_.Str() + tip_string_;
+    if (IsDirectory(str_dir)) {
+      tip_string_ += "/";
+    }
+  }
+
   buf_.AddString(tip_string_, buf_.Length());
+
   tip_string_ = "";
   HideTip();
   cursor_.MoveToPos(buf_.Length());

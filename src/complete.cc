@@ -3,6 +3,7 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <boost/filesystem.hpp>
 #include "cursor.h"
 #include "prompt.h"
 #include "scope-exit.h"
@@ -21,7 +22,8 @@ Complete::Complete(int start_line, FuncComplete&& fn, Prompt& prompt)
     , show_(false)
     , num_cols_(0)
     , total_items_(0)
-    , show_always_(false) {}
+    , show_always_(false)
+    , is_path_(false) {}
 
 void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   if (show_) {
@@ -63,6 +65,7 @@ int Complete::Print(const std::vector<std::string>& args) {
     CompleteList list_result(fn_complete_(args));
 
     if (list_result.GetType() == CompleteList::Type::kList) {
+      is_path_ = false;
       items_ = boost::get<CompleteResultList>(list_result.GetItems())
           .GetItems();
 
@@ -75,15 +78,70 @@ int Complete::Print(const std::vector<std::string>& args) {
       }
     }
   } else {
-    items_ = ListDir(".", ListDirType::FILES_DIR);
+    is_path_ = true;
+    std::string path;
+    std::string last_part;
+    std::tie(path, last_part) = ParserPath(last_arg);
 
-    if (last_arg.empty()) {
+    if (!IsDirectory(path)) {
+      is_path_ = false;
+      show_ = false;
+      return 0;
+    }
+
+    items_ = ListDir(path, ListDirType::FILES_DIR);
+
+    if (last_part.empty()) {
       return PrintList(items_);
     } else {
       // uses only item that match
-      items_ = MatchArg(last_arg, items_);
+      items_ = MatchArg(last_part, items_);
       return PrintList(items_);
     }
+  }
+}
+
+void Complete::CompleteTip(const std::vector<std::string>& args) {
+  std::string last_arg = args.back();
+  std::vector<std::string> items;
+
+  if (fn_complete_) {
+    CompleteList list_result(fn_complete_(args));
+
+    if (list_result.GetType() == CompleteList::Type::kList) {
+      is_path_ = false;
+      items = boost::get<CompleteResultList>(list_result.GetItems())
+          .GetItems();
+
+      if (!last_arg.empty()) {
+        // uses only item that match
+        items = MatchArg(last_arg, items);
+      }
+    }
+  } else {
+    is_path_ = true;
+    std::string path;
+    std::string last_part;
+    std::tie(path, last_part) = ParserPath(last_arg);
+
+    if (!IsDirectory(path)) {
+      is_path_ = false;
+      show_ = false;
+      return;
+    }
+
+    items = ListDir(path, ListDirType::FILES_DIR);
+
+    if (!last_part.empty()) {
+      // uses only item that match
+      items = MatchArg(last_part, items);
+    }
+  }
+
+  if (items.size() == 1) {
+    sel_content_ = items[0];
+    prompt_.ShowTip(items[0]);
+    show_ = false;
   }
 }
 

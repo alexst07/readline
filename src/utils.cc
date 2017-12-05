@@ -44,18 +44,19 @@ std::vector<std::string> ListDir(const std::string& dir, ListDirType t) {
   fs::directory_iterator end_itr;
 
   for (fs::directory_iterator itr(p); itr != end_itr; ++itr) {
+    std::string current_file = itr->path().string();
+    size_t last_bar_pos = current_file.find_last_of("/");
+    current_file = current_file.substr(last_bar_pos + 1);
+
     if (t == ListDirType::FILES) {
       if (fs::is_regular_file(itr->path())) {
-        std::string current_file = itr->path().string();
         list.push_back(current_file);
       }
     } else if (t == ListDirType::DIR) {
       if (fs::is_directory(itr->path())) {
-        std::string current_file = itr->path().string();
         list.push_back(current_file);
       }
     } else {
-      std::string current_file = itr->path().string();
       list.push_back(current_file);
     }
   }
@@ -76,17 +77,23 @@ std::vector<std::string> MatchArg(const std::string& arg,
   return new_list;
 }
 
-std::tuple<std::string, std::string> ParserPath(const std::string& arg) {
+std::tuple<std::string, std::string> ParserPath(const std::string& arg,
+    bool supress_point) {
+  namespace fs = boost::filesystem;
   std::vector<std::string> elements;
   std::string path = "";
   std::string last;
 
-  for(auto& part : boost::filesystem::path(arg)) {
+  std::string path_arg = arg == ""? ".":arg;
+
+  for(auto& part : fs::path(path_arg)) {
     elements.push_back(part.filename().string());
   }
 
-  last = elements.back();
-  elements.pop_back();
+  if (!(elements.size() == 1 && (elements[0] == "/" || elements[0] == "."))) {
+    last = elements.back();
+    elements.pop_back();
+  }
 
   for (auto& e : elements) {
     if (e != "/") {
@@ -96,7 +103,40 @@ std::tuple<std::string, std::string> ParserPath(const std::string& arg) {
     }
   }
 
+  if (last == "." && supress_point) {
+    last = "";
+  }
+
+  if (path == "") {
+    path = ".";
+  } else if (path.substr(0,2) == "~/") {
+    boost::replace_first(path, "~/", std::string(getenv("HOME")) + "/");
+  }
+
   return std::tuple<std::string, std::string>(path, last);
+}
+
+std::string DirectoryFormat(const std::string& dir) {
+  if (IsDirectory(dir)) {
+    return dir + "/";
+  } else {
+    return dir;
+  }
+}
+
+bool IsDirectory(const std::string path) {
+  namespace fs = boost::filesystem;
+  std::string str_path = path;
+
+  if (path.substr(0,2) == "~/") {
+    boost::replace_first(str_path, "~/", std::string(getenv("HOME")) + "/");
+  }
+
+  if (fs::is_directory(fs::path(str_path))) {
+    return true;
+  }
+
+  return false;
 }
 
 }

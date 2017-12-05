@@ -1,6 +1,7 @@
 #include "buffer-string.h"
 
 #include <string>
+#include <boost/algorithm/string.hpp>
 
 namespace readline {
 
@@ -215,27 +216,15 @@ int BufferString::EndArgPos(int n) {
 }
 
 std::string BufferString::GetTrimToken(int n) {
-  bool escaped = false;
   int start = StartArgPos(n);
   int end = EndArgPos(n);
-  std::string str = "";
-
-  for (int i = start; i < end; i++) {
-    if (content_[i] == ' ' && !escaped) {
-      continue;
-    }
-
-    if (i < end - 1 ) {
-      if (content_[i] == '\\' && content_[i + 1] == ' ') {
-        escaped = true;
-        continue;
-      }
-    }
-
-    str += content_[i];
-  }
-
+  std::string str = content_.substr(start, end - start);
+  boost::trim(str);
   return str;
+}
+
+std::string BufferString::GetSlice(int start, int end) {
+  return content_.substr(start, end - start);
 }
 
 void BufferString::RemoveSubStr(int from, int to) {

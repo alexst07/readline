@@ -97,6 +97,8 @@ class Complete {
 
   void Hide();
 
+  void CompleteTip(const std::vector<std::string>& args);
+
   void CleanLines();
 
   void SelNextItem();
@@ -125,6 +127,10 @@ class Complete {
 
   inline int ListSize() const {
     return items_.size();
+  }
+
+  inline bool IsPathComplete() const {
+    return is_path_;
   }
 
  private:
@@ -165,6 +171,9 @@ class Complete {
 
   // if the list must be showed, even when there is only one element
   bool show_always_;
+
+  // flat for sinlize if the las complete list was for directory
+  bool is_path_;
 };
 
 }  // namespace readline

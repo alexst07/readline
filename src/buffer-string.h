@@ -44,6 +44,8 @@ class BufferString {
 
   std::string GetTrimToken(int n);
 
+  std::string GetSlice(int start, int end);
+
   const std::string& Str() const;
 
   friend BufferString operator+(const BufferString& bufstr, char c);
