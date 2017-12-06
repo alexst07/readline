@@ -23,7 +23,8 @@ Complete::Complete(int start_line, FuncComplete&& fn, Prompt& prompt)
     , num_cols_(0)
     , total_items_(0)
     , show_always_(false)
-    , is_path_(false) {}
+    , is_path_(false)
+    , has_more_(false) {}
 
 void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   if (show_) {
@@ -183,6 +184,10 @@ int Complete::PrintList(const std::vector<std::string>& list) {
     for (size_t i = 0; i < list.size(); i++) {;
       cursor_.MoveToAbsolute(
           cursor_.GetStartLine() + prompt_.NumOfLines()+lines, 1);
+      // clean the line
+      std::cout << "\033[K";
+
+      // print item on line
       std::cout << list[i];
       ++lines;
     }
@@ -215,6 +220,17 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
   for (size_t i = 0; i < list.size(); i++) {
     if (i%nc == 0 && i > 0) {
       ++lines;
+      cursor_.MoveToAbsolute(
+          cursor_.GetStartLine() + prompt_.NumOfLines()+lines, 1);
+      // clean the line
+      std::cout << "\033[K";
+
+      if (lines > CalcMaxLines()) {
+        PrintMoreOpt(item_sel_ == kMore);
+        return lines;
+      } else {
+        has_more_ = false;
+      }
     }
 
     // show the items side by side, I multiply i by 2 to keep two spaces
@@ -259,8 +275,13 @@ void Complete::SelNextItem() {
   int sel = item_sel_ + 1;
 
   if (sel >= total_items_) {
-    item_sel_ = 0;
-    return;
+    if (has_more_) {
+      item_sel_ = kMore;
+      return;
+    } else {
+      item_sel_ = 0;
+      return;
+    }
   }
 
   ++item_sel_;
@@ -300,8 +321,13 @@ void Complete::SelDownItem() {
   int sel = item_sel_ + num_cols_;
 
   if (sel == total_items_ - 1) {
-    item_sel_ = 0;
-    return;
+    if (has_more_) {
+      item_sel_ = kMore;
+      return;
+    } else {
+      item_sel_ = 0;
+      return;
+    }
   }
 
   if (sel >= total_items_) {
@@ -341,6 +367,24 @@ std::string Complete::UseSelContent() {
   std::string content = sel_content_;
   sel_content_ = "";
   return content;
+}
+
+int Complete::CalcMaxLines() {
+  TermSize term_size = Terminal::Size();
+  int size = term_size.lines - prompt_.NumOfLines();
+  return size/2;
+}
+
+void Complete::PrintMoreOpt(bool selected) {
+  has_more_ = true;
+
+  if (selected) {
+    std::cout << "\e[48;5;7m" << "[[more]]" << "\033[0m";
+  } else {
+    std::cout << "[[more]]";
+  }
+
+  cursor_.MoveToPos(cursor_.GetPos());
 }
 
 }  // namespace readline

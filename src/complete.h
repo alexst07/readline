@@ -80,8 +80,8 @@ class CompleteList {
   }
 
  private:
-   Type type_;
-   Variant items_;
+  Type type_;
+  Variant items_;
 };
 
 using FuncComplete =
@@ -89,6 +89,10 @@ using FuncComplete =
 
 class Complete {
  public:
+  enum Select {
+    kMore = -2
+  };
+
   Complete(int start_line, FuncComplete&& fn, Prompt& prompt);
 
   void Show(const std::vector<std::string>& args, bool show_always = false);
@@ -143,6 +147,10 @@ class Complete {
   void PrintListDescr(
       const std::vector<std::pair<std::string, std::string>>& list);
 
+  int CalcMaxLines();
+
+  void PrintMoreOpt(bool selected);
+
   int start_line_;
   int item_sel_;
   std::string complete_;
@@ -174,6 +182,9 @@ class Complete {
 
   // flat for sinlize if the las complete list was for directory
   bool is_path_;
+
+  // flag to sinalize that has more items than tha lines allowed to print
+  bool has_more_;
 };
 
 }  // namespace readline
