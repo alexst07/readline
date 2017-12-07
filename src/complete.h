@@ -185,6 +185,8 @@ class Complete {
 
   // flag to sinalize that has more items than tha lines allowed to print
   bool has_more_;
+
+  bool full_screen_mode_;
 };
 
 }  // namespace readline

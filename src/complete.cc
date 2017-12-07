@@ -24,7 +24,8 @@ Complete::Complete(int start_line, FuncComplete&& fn, Prompt& prompt)
     , total_items_(0)
     , show_always_(false)
     , is_path_(false)
-    , has_more_(false) {}
+    , has_more_(false)
+    , full_screen_mode_(false) {}
 
 void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   int pos = cursor_.GetPos();
@@ -52,6 +53,11 @@ void Complete::Hide() {
   CleanLines();
   show_ = false;
   item_sel_ = -1;
+  lines_show_ = 0;
+  is_path_ = false;
+  show_always_ = false;
+  total_items_ = 0;
+  has_more_ = false;
 }
 
 void Complete::CleanLines() {
@@ -214,10 +220,10 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
 
   // calculate the number of lines, and how many lines we will need to add
   // '\n' char
-  num_lines = num_lines > CalcMaxLines()? CalcMaxLines(): num_lines;
+  num_lines = num_lines > CalcMaxLines()? CalcMaxLines() + 1: num_lines;
 
   if (pos_line + num_lines > term_size.lines) {
-    int num_add_lines = term_size.lines - pos_line + num_lines;
+    int num_add_lines = num_lines - (term_size.lines - pos_line);
     prompt_.AddLines(num_add_lines);
   }
 
@@ -387,8 +393,8 @@ void Complete::SelUpItem() {
   }
 
   if (sel < 0) {
-    item_sel_ = (item_sel_%num_cols_)*(has_more_?
-        lines_show_ - 1: lines_show_);
+    item_sel_ = (num_cols_)*(has_more_?
+        lines_show_ - 2: lines_show_ - 1) + item_sel_%num_cols_ - 1;
     return;
   }
 
