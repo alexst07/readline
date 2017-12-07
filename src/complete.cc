@@ -26,8 +26,9 @@ Complete::Complete(int start_line, FuncComplete&& fn, Prompt& prompt)
     , is_path_(false)
     , has_more_(false)
     , full_screen_mode_(false)
+    , full_screen_line_(0)
     , max_string_len_(0)
-    , full_screen_line_(0) {}
+    , all_items_mode_(false) {}
 
 void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   int pos = cursor_.GetPos();
@@ -37,6 +38,8 @@ void Complete::Show(const std::vector<std::string>& args, bool show_always) {
 
   show_ = true;
   show_always_ = show_always;
+
+
   lines_show_ = Print(args);
   cursor_.MoveToPos(pos);
 }
@@ -61,6 +64,8 @@ void Complete::Hide() {
   total_items_ = 0;
   has_more_ = false;
   max_string_len_ = 0;
+  full_screen_mode_ = false;
+  all_items_mode_ = false;
 }
 
 void Complete::CleanLines() {
@@ -188,10 +193,10 @@ int Complete::PrintList(const std::vector<std::string>& list) {
   TermSize term_size = Terminal::Size();
 
   // we add by 3, because we want 3 white space between each item
-  int ncols = term_size.cols / (len + 3);
+  int ncols = term_size.cols / (max_string_len_ + 3);
 
   if (ncols > 1) {
-    return PrintItemsList(list, ncols, len);
+    return PrintItemsList(list, ncols, max_string_len_);
   } else {
     int lines = 0;
 
@@ -212,6 +217,11 @@ int Complete::PrintList(const std::vector<std::string>& list) {
 
 int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
     int len) {
+  // choose the correct print mode
+  if (full_screen_mode_ || all_items_mode_) {
+    return FullScreenMenu();
+  }
+
   int lines = 0;
   num_cols_ = nc;
   total_items_ = list.size();
@@ -268,12 +278,39 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
   return lines;
 }
 
+void Complete::PrintAllItems() {
+  int lines = 0;
+
+  for (size_t i = 0; i < items_.size(); i++) {
+    if (i%num_cols_ == 0 && i > 0) {
+      ++lines;
+    }
+
+    int mod = i%num_cols_;
+    int pos_col = mod* max_string_len_ + (mod > 0? mod*3: 0);
+    cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()
+        +lines, pos_col + 1);
+
+    if (i == item_sel_) {
+      sel_content_ = items_[i];
+      std::cout << "\e[48;5;7m" << items_[i] << "\033[0m";
+      prompt_.ShowTip(items_[i]);
+    } else {
+      std::cout << items_[i];
+    }
+  }
+}
+
 int Complete::FullScreenMenu() {
+  has_more_ = false;
+
   // calculate the size of menu
   TermSize term_size = Terminal::Size();
   int pos_line = prompt_.GetCursorRef().CalcAbsoluteLine(
       prompt_.Str().length());
-  int menu_size = term_size.lines - pos_line;
+
+  // subtract 1, bacause last line is status line
+  int menu_size = term_size.lines - prompt_.NumOfLines();
 
   // calculate how many lines we need to add
   if (pos_line + menu_size > term_size.lines) {
@@ -292,57 +329,47 @@ int Complete::FullScreenMenu() {
   // calculate if we can show all items in the screen
   int num_lines = static_cast<int>(std::ceil(
       static_cast<float>(items_.size()) / static_cast<float>(num_cols_)));
+
   if (num_lines <= menu_size) {
-    int lines = 0;
-
-    for (size_t i = 0; i < items_.size(); i++) {
-      if (i%num_cols_ == 0 && i > 0) {
-        ++lines;
-      }
-
-      int mod = i%num_cols_;
-      int pos_col = mod* max_string_len_ + (mod > 0? mod*3: 0);
-      cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()
-          +lines, pos_col + 1);
-
-      if (i == item_sel_) {
-        sel_content_ = items_[i];
-        std::cout << "\e[48;5;7m" << items_[i] << "\033[0m";
-        prompt_.ShowTip(items_[i]);
-      } else {
-        std::cout << items_[i];
-      }
-    }
-
+    PrintAllItems();
     return menu_size;
   } else {
-    int lines = 0;
-
-    for (size_t i = full_screen_line_*num_cols_; i < items_.size() - 1; i++) {
-      if (i%num_cols_ == 0 && i > 0) {
-        ++lines;
-      }
-
-      int mod = i%num_cols_;
-      int pos_col = mod* max_string_len_ + (mod > 0? mod*3: 0);
-      cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()
-          +lines, pos_col + 1);
-
-      if (i == item_sel_) {
-        sel_content_ = items_[i];
-        std::cout << "\e[48;5;7m" << items_[i] << "\033[0m";
-        prompt_.ShowTip(items_[i]);
-      } else {
-        std::cout << items_[i];
-      }
-    }
-
+    FullScreenMenuWithBar(menu_size);
     return menu_size;
   }
 }
 
-int Complete::FullScreenMenuWithBar() {
+int Complete::FullScreenTotalItems(int menu_size) {
+  // calculate the end item of full screen
+  int last_items = (full_screen_line_ + menu_size)*num_cols_;
+  last_items = last_items >= items_.size()? items_.size() - 1:last_items;
+  return last_items;
+}
 
+void Complete::FullScreenMenuWithBar(int menu_size) {
+  full_screen_mode_ = true;
+  int lines = 0;
+
+  int last_items = FullScreenTotalItems(menu_size);
+
+  for (size_t i = full_screen_line_*num_cols_; i < last_items; i++) {
+    if (i%num_cols_ == 0 && i > 0) {
+      ++lines;
+    }
+
+    int mod = i%num_cols_;
+    int pos_col = mod* max_string_len_ + (mod > 0? mod*3: 0);
+    cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()
+        +lines, pos_col + 1);
+
+    if (i == item_sel_) {
+      sel_content_ = items_[i];
+      std::cout << "\e[48;5;7m" << items_[i] << "\033[0m";
+      prompt_.ShowTip(items_[i]);
+    } else {
+      std::cout << items_[i];
+    }
+  }
 }
 
 void Complete::SelectFirstItem() {
@@ -501,7 +528,7 @@ void Complete::PrintMoreOpt(bool selected) {
   has_more_ = true;
 
   if (selected) {
-    std::cout << "\e[48;5;7m" << "[[more]]" << "\033[0m";
+    FullScreenMenu();
   } else {
     std::cout << "[[more]]";
   }

@@ -115,7 +115,11 @@ class Complete {
 
   int FullScreenMenu();
 
-  int FullScreenMenuWithBar();
+  void PrintAllItems();
+
+  void FullScreenMenuWithBar(int menu_size);
+
+  int FullScreenTotalItems(int menu_size);
 
   std::string UseSelContent();
 
@@ -195,6 +199,8 @@ class Complete {
   int full_screen_line_;
 
   int max_string_len_;
+
+  bool all_items_mode_;
 };
 
 }  // namespace readline

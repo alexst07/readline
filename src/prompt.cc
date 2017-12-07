@@ -92,6 +92,7 @@ void Prompt::Backspace() {
 void Prompt::AddChar(char c) {
   int char_pos = cursor_.GetPos();
 
+  // add new line, if it is on the end of the line
   if (cursor_.IsInLastPosition(buf_.Length())) {
     cursor_.SetStartLine(cursor_.GetStartLine() - 1);
     std::cout << '\n';
