@@ -113,6 +113,10 @@ class Complete {
 
   void SelUpItem();
 
+  int FullScreenMenu();
+
+  int FullScreenMenuWithBar();
+
   std::string UseSelContent();
 
   void SelectFirstItem();
@@ -187,6 +191,10 @@ class Complete {
   bool has_more_;
 
   bool full_screen_mode_;
+
+  int full_screen_line_;
+
+  int max_string_len_;
 };
 
 }  // namespace readline

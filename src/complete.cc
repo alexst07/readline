@@ -25,7 +25,9 @@ Complete::Complete(int start_line, FuncComplete&& fn, Prompt& prompt)
     , show_always_(false)
     , is_path_(false)
     , has_more_(false)
-    , full_screen_mode_(false) {}
+    , full_screen_mode_(false)
+    , max_string_len_(0)
+    , full_screen_line_(0) {}
 
 void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   int pos = cursor_.GetPos();
@@ -58,6 +60,7 @@ void Complete::Hide() {
   show_always_ = false;
   total_items_ = 0;
   has_more_ = false;
+  max_string_len_ = 0;
 }
 
 void Complete::CleanLines() {
@@ -172,10 +175,14 @@ int Complete::PrintList(const std::vector<std::string>& list) {
   size_t len = 0;
 
   // get the max string len item
-  for (const auto& item: list) {
-    if (item.length() > len) {
-      len = item.length();
+  if (max_string_len_ == 0) {
+    for (const auto& item: list) {
+      if (item.length() > len) {
+        len = item.length();
+      }
     }
+
+    max_string_len_ = len;
   }
 
   TermSize term_size = Terminal::Size();
@@ -259,6 +266,83 @@ int Complete::PrintItemsList(const std::vector<std::string>& list, int nc,
 
   has_more_ = false;
   return lines;
+}
+
+int Complete::FullScreenMenu() {
+  // calculate the size of menu
+  TermSize term_size = Terminal::Size();
+  int pos_line = prompt_.GetCursorRef().CalcAbsoluteLine(
+      prompt_.Str().length());
+  int menu_size = term_size.lines - pos_line;
+
+  // calculate how many lines we need to add
+  if (pos_line + menu_size > term_size.lines) {
+    int num_add_lines = menu_size - (term_size.lines - pos_line);
+    prompt_.AddLines(num_add_lines);
+  }
+
+  // clean all lines
+  for (size_t i = 0; i < menu_size; i++) {
+    cursor_.MoveToAbsolute(
+        cursor_.GetStartLine() + prompt_.NumOfLines()+ i + 1, 1);
+    // clean the line
+    std::cout << "\033[K";
+  }
+
+  // calculate if we can show all items in the screen
+  int num_lines = static_cast<int>(std::ceil(
+      static_cast<float>(items_.size()) / static_cast<float>(num_cols_)));
+  if (num_lines <= menu_size) {
+    int lines = 0;
+
+    for (size_t i = 0; i < items_.size(); i++) {
+      if (i%num_cols_ == 0 && i > 0) {
+        ++lines;
+      }
+
+      int mod = i%num_cols_;
+      int pos_col = mod* max_string_len_ + (mod > 0? mod*3: 0);
+      cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()
+          +lines, pos_col + 1);
+
+      if (i == item_sel_) {
+        sel_content_ = items_[i];
+        std::cout << "\e[48;5;7m" << items_[i] << "\033[0m";
+        prompt_.ShowTip(items_[i]);
+      } else {
+        std::cout << items_[i];
+      }
+    }
+
+    return menu_size;
+  } else {
+    int lines = 0;
+
+    for (size_t i = full_screen_line_*num_cols_; i < items_.size() - 1; i++) {
+      if (i%num_cols_ == 0 && i > 0) {
+        ++lines;
+      }
+
+      int mod = i%num_cols_;
+      int pos_col = mod* max_string_len_ + (mod > 0? mod*3: 0);
+      cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()
+          +lines, pos_col + 1);
+
+      if (i == item_sel_) {
+        sel_content_ = items_[i];
+        std::cout << "\e[48;5;7m" << items_[i] << "\033[0m";
+        prompt_.ShowTip(items_[i]);
+      } else {
+        std::cout << items_[i];
+      }
+    }
+
+    return menu_size;
+  }
+}
+
+int Complete::FullScreenMenuWithBar() {
+
 }
 
 void Complete::SelectFirstItem() {
