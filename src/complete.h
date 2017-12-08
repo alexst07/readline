@@ -93,7 +93,7 @@ class Complete {
     kMore = -2
   };
 
-  Complete(int start_line, FuncComplete&& fn, Prompt& prompt);
+  Complete(FuncComplete&& fn, Prompt& prompt);
 
   void Show(const std::vector<std::string>& args, bool show_always = false);
 
@@ -112,6 +112,8 @@ class Complete {
   void SelDownItem();
 
   void SelUpItem();
+
+  void SelCheck();
 
   int FullScreenMenu();
 
@@ -150,7 +152,7 @@ class Complete {
 
   int PrintList(const std::vector<std::string>& list);
 
-  int PrintItemsList(const std::vector<std::string>& list, int nc, int len);
+  int PrintItemsList(const std::vector<std::string>& list);
 
   void PrintListDescr(
       const std::vector<std::pair<std::string, std::string>>& list);

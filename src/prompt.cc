@@ -13,7 +13,7 @@ namespace readline {
 Prompt::Prompt(const std::string& str_prompt, FuncComplete&& fn)
     : str_prompt_(str_prompt)
     , cursor_(GetCursorPosition().line, str_prompt_.length())
-    , complete_(cursor_.GetStartLine(), std::move(fn), *this)
+    , complete_(std::move(fn), *this)
     , tip_mode_(false) {
   std::cout << str_prompt_ << std::flush;
   cursor_.MoveToPos(0);
