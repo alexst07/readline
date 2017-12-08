@@ -38,7 +38,6 @@ void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   show_ = true;
   show_always_ = show_always;
 
-
   lines_show_ = Print(args);
   cursor_.MoveToPos(pos);
 }
@@ -68,6 +67,7 @@ void Complete::Hide() {
   full_screen_mode_ = false;
   all_items_mode_ = false;
   num_cols_ = 0;
+  complete_token_ = false;
 }
 
 void Complete::CleanLines() {
@@ -79,6 +79,7 @@ void Complete::CleanLines() {
 }
 
 int Complete::Print(const std::vector<std::string>& args) {
+  max_string_len_ = 0;
   std::string last_arg = args.back();
 
   if (fn_complete_) {
@@ -231,6 +232,11 @@ int Complete::PrintItemsList(const std::vector<std::string>& list) {
     int num_add_lines = num_lines - (term_size.lines - pos_line);
     prompt_.AddLines(num_add_lines);
   }
+
+  // clear the first line
+  cursor_.MoveToAbsolute(
+      cursor_.GetStartLine() + prompt_.NumOfLines(), 1);
+  std::cout << "\033[K";
 
   for (size_t i = 0; i < list.size(); i++) {
     if (i%num_cols_ == 0 && i > 0) {
