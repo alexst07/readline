@@ -50,7 +50,7 @@ void Complete::Show() {
     has_more_ = false;
   }
 
-  lines_show_ = PrintList(items_);
+  lines_show_ = PrintList(*items_);
   cursor_.MoveToPos(pos);
 }
 
@@ -87,15 +87,15 @@ int Complete::Print(const std::vector<std::string>& args) {
 
     if (list_result.GetType() == CompleteList::Type::kList) {
       is_path_ = false;
-      items_ = boost::get<CompleteResultList>(list_result.GetItems())
-          .GetItems();
+      // items_ = boost::get<CompleteResultList>(list_result.GetItems())
+      //     .GetItems();
 
       if (last_arg.empty()) {
-        return PrintList(items_);
+        return PrintList(*items_);
       } else {
         // uses only item that match
-        items_ = MatchArg(last_arg, items_);
-        return PrintList(items_);
+        MatchArg(last_arg, items_.get());
+        return PrintList(*items_);
       }
     }
   } else {
@@ -110,14 +110,17 @@ int Complete::Print(const std::vector<std::string>& args) {
       return 0;
     }
 
-    items_ = ListDir(path, ListDirType::FILES_DIR);
+    // on this part we can be certain, that it is a simple list and not
+    // a descr list, so we can use static cast
+    items_ = std::unique_ptr<List>(
+        new ListItem(ListDir(path, ListDirType::FILES_DIR)));
 
     if (last_part.empty()) {
-      return PrintList(items_);
+      return PrintList(*items_);
     } else {
       // uses only item that match
-      items_ = MatchArg(last_part, items_);
-      return PrintList(items_);
+      MatchArg(last_part, items_.get());
+      return PrintList(*items_);
     }
   }
 }
@@ -129,16 +132,16 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
   if (fn_complete_) {
     CompleteList list_result(fn_complete_(args));
 
-    if (list_result.GetType() == CompleteList::Type::kList) {
-      is_path_ = false;
-      items = boost::get<CompleteResultList>(list_result.GetItems())
-          .GetItems();
-
-      if (!last_arg.empty()) {
-        // uses only item that match
-        items = MatchArg(last_arg, items);
-      }
-    }
+    // if (list_result.GetType() == CompleteList::Type::kList) {
+    //   is_path_ = false;
+    //   items = boost::get<CompleteResultList>(list_result.GetItems())
+    //       .GetItems();
+    //
+    //   if (!last_arg.empty()) {
+    //     // uses only item that match
+    //     MatchArg(last_arg, *items);
+    //   }
+    // }
   } else {
     is_path_ = true;
     std::string path;
@@ -166,17 +169,10 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
   }
 }
 
-int Complete::PrintList(const std::vector<std::string>& list) {
+int Complete::PrintList(List& list) {
   // get the max string len item
-  size_t len = 0;
   if (max_string_len_ == 0) {
-    for (const auto& item: list) {
-      if (item.length() > len) {
-        len = item.length();
-      }
-    }
-
-    max_string_len_ = len;
+    max_string_len_ = list.MaxStringLen();
   }
 
   TermSize term_size = Terminal::Size();
@@ -189,16 +185,16 @@ int Complete::PrintList(const std::vector<std::string>& list) {
     return FullScreenMenu();
   }
 
-  if (list.empty()) {
+  if (list.Empty()) {
     show_ = false;
     return 0;
   }
 
   // don't show the list if there is only one element, and show_always_ is false
   // on this case, we only show the tip for the user
-  if (list.size() == 1 && !show_always_) {
-    sel_content_ = list[0];
-    prompt_.ShowTip(list[0]);
+  if (list.Size() == 1 && !show_always_) {
+    sel_content_ = list.Value(0);
+    prompt_.ShowTip(list.Value(0));
     show_ = false;
     return 0;
   }
@@ -211,13 +207,13 @@ int Complete::PrintList(const std::vector<std::string>& list) {
   }
 }
 
-int Complete::PrintItemsList(const std::vector<std::string>& list) {
+int Complete::PrintItemsList(List& list) {
   int lines = 0;
-  total_items_ = list.size();
+  total_items_ = list.Size();
 
   // calculates the number of needed lines
   int num_lines = static_cast<int>(std::ceil(
-      static_cast<float>(list.size()) / static_cast<float>(num_cols_)));
+      static_cast<float>(list.Size()) / static_cast<float>(num_cols_)));
 
   // calculates where must be start line
   TermSize term_size = Terminal::Size();
@@ -238,7 +234,7 @@ int Complete::PrintItemsList(const std::vector<std::string>& list) {
       cursor_.GetStartLine() + prompt_.NumOfLines(), 1);
   std::cout << "\033[K";
 
-  for (size_t i = 0; i < list.size(); i++) {
+  for (size_t i = 0; i < list.Size(); i++) {
     if (i%num_cols_ == 0 && i > 0) {
       ++lines;
       cursor_.MoveToAbsolute(
@@ -261,11 +257,11 @@ int Complete::PrintItemsList(const std::vector<std::string>& list) {
         pos_col + 1);
 
     if (i == item_sel_) {
-      sel_content_ = list[i];
-      std::cout << "\e[48;5;7m" << list[i] << "\033[0m";
-      prompt_.ShowTip(list[i]);
+      sel_content_ = list.Value(i);
+      std::cout << "\e[7m" << list.StrWithStyle(i) << "\033[0m";
+      prompt_.ShowTip(list.Value(i));
     } else {
-      std::cout << list[i];
+      std::cout << list.Value(i);
     }
   }
 
@@ -276,7 +272,7 @@ int Complete::PrintItemsList(const std::vector<std::string>& list) {
 void Complete::PrintAllItems() {
   int lines = 0;
 
-  for (size_t i = 0; i < items_.size(); i++) {
+  for (size_t i = 0; i < items_->Size(); i++) {
     if (i%num_cols_ == 0 && i > 0) {
       ++lines;
     }
@@ -287,11 +283,11 @@ void Complete::PrintAllItems() {
         +lines, pos_col + 1);
 
     if (i == item_sel_) {
-      sel_content_ = items_[i];
-      std::cout << "\e[48;5;7m" << items_[i] << "\033[0m";
-      prompt_.ShowTip(items_[i]);
+      sel_content_ = items_->Value(i);
+      std::cout << "\e[7m" << items_->StrWithStyle(i) << "\033[0m";
+      prompt_.ShowTip(items_->Value(i));
     } else {
-      std::cout << items_[i];
+      std::cout << items_->StrWithStyle(i);
     }
   }
 }
@@ -323,7 +319,7 @@ int Complete::FullScreenMenu() {
 
   // calculate if we can show all items in the screen
   int num_lines = static_cast<int>(std::ceil(
-      static_cast<float>(items_.size()) / static_cast<float>(num_cols_)));
+      static_cast<float>(items_->Size()) / static_cast<float>(num_cols_)));
 
   if (num_lines <= menu_size) {
     PrintAllItems();
@@ -337,7 +333,7 @@ int Complete::FullScreenMenu() {
 int Complete::FullScreenTotalItems(int menu_size) {
   // calculate the end item of full screen
   int last_items = (full_screen_line_ + menu_size)*num_cols_;
-  last_items = last_items >= items_.size()? items_.size() - 1:last_items;
+  last_items = last_items >= items_->Size()? items_->Size() - 1:last_items;
   return last_items;
 }
 
@@ -366,11 +362,11 @@ void Complete::FullScreenMenuWithBar(int menu_size) {
 
     if (i == item_sel_) {
       // print the selected item with different color, and update the tip
-      sel_content_ = items_[i];
-      std::cout << "\e[48;5;7m" << items_[i] << "\033[0m";
-      prompt_.ShowTip(items_[i]);
+      sel_content_ = items_->Value(i);
+      std::cout << "\e[7m" << items_->StrWithStyle(i) << "\033[0m";
+      prompt_.ShowTip(items_->Value(i));
     } else {
-      std::cout << items_[i];
+      std::cout << items_->Value(i);
     }
   }
 

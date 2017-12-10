@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <algorithm>
 #include <string>
 #include <tuple>
 #include <boost/algorithm/string.hpp>
@@ -61,7 +62,18 @@ std::vector<std::string> ListDir(const std::string& dir, ListDirType t) {
     }
   }
 
+  std::sort(list.begin(), list.end());
   return list;
+}
+
+void MatchArg(const std::string& arg, List* list) {
+  list->EraseIf([&](const std::string& item) {
+    if (item.find(arg) != 0) {
+      return true;
+    }
+
+    return false;
+  });
 }
 
 std::vector<std::string> MatchArg(const std::string& arg,
@@ -75,7 +87,8 @@ std::vector<std::string> MatchArg(const std::string& arg,
   }
 
   return new_list;
-}
+ }
+
 
 std::tuple<std::string, std::string> ParserPath(const std::string& arg,
     bool supress_point) {

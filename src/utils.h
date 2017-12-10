@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include "text.h"
 
 namespace readline {
 
@@ -18,6 +19,8 @@ enum class ListDirType {
 };
 
 std::vector<std::string> ListDir(const std::string& dir, ListDirType t);
+
+void MatchArg(const std::string& arg, List* list);
 
 std::vector<std::string> MatchArg(const std::string& arg,
     std::vector<std::string> list);

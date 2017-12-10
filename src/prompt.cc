@@ -87,6 +87,11 @@ void Prompt::Backspace() {
     bool show_always = AlwaysShowComplete();
     complete_.Show(args, show_always);
   }
+
+  // reset tip, to avoid trash as tip
+  std::vector<std::string> args;
+  args.push_back("");
+  complete_.CompleteTip(args);
 }
 
 void Prompt::AddChar(char c) {
@@ -356,6 +361,10 @@ void Prompt::AcceptTip() {
   tip_string_ = "";
   HideTip();
   cursor_.MoveToPos(buf_.Length());
+
+  if (complete_.Showing()) {
+    complete_.Hide();
+  }
 }
 
 void Prompt::HideTip() {

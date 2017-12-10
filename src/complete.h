@@ -6,25 +6,59 @@
 #include <vector>
 #include <boost/variant.hpp>
 #include "cursor.h"
+#include "text.h"
 
 namespace readline {
 class Prompt;
 
-class CompleteResultFiles {};
-class CompleteResultDirs {};
-class CompleteResultDirsAndFiles {};
-
-class CompleteResultList {
+class CompleteResult {
  public:
-  CompleteResultList(std::vector<std::string>&& items)
-      : items_(std::move(items)) {}
+  enum class Type {
+    kFiles,
+    kDirs,
+    kDirsAndFiles,
+    kList,
+    kListDescr
+  };
 
-  const std::vector<std::string> GetItems() const {
-    return items_;
+  CompleteResult(Type type): type_(type) {}
+
+  Type GetType() {
+    return type_;
   }
 
  private:
-  std::vector<std::string> items_;
+  Type type_;
+};
+
+class CompleteResultFiles: public CompleteResult {
+ public:
+  CompleteResultFiles(): CompleteResult(CompleteResult::Type::kFiles) {}
+};
+
+class CompleteResultDirs: public CompleteResult {
+ public:
+  CompleteResultDirs(): CompleteResult(CompleteResult::Type::kDirs) {}
+};
+
+class CompleteResultDirsAndFiles: public CompleteResult {
+ public:
+  CompleteResultDirsAndFiles()
+      : CompleteResult(CompleteResult::Type::kDirsAndFiles) {}
+};
+
+class CompleteResultList: public CompleteResult {
+ public:
+  CompleteResultList(std::vector<std::string>& items)
+      : CompleteResult(CompleteResult::Type::kList)
+      , items_(std::move(std::make_unique<ListItem>(items))) {}
+
+  std::unique_ptr<List> GetItemsPtr() {
+    return std::move(items_);
+  }
+
+ private:
+  std::unique_ptr<List> items_;
 };
 
 class CompleteResultListDescr {
@@ -39,49 +73,17 @@ class CompleteResultListDescr {
 
 class CompleteList {
  public:
-  using Variant = boost::variant<CompleteResultFiles, CompleteResultDirs,
-     CompleteResultDirsAndFiles, CompleteResultList,
-     CompleteResultListDescr>;
+  using Type = CompleteResult::Type;
 
-  enum class Type {
-    kFiles,
-    kDirs,
-    kDirsAndFiles,
-    kList,
-    kListDescr
-  };
+  CompleteList(std::unique_ptr<CompleteResult> result_list)
+      : result_list_(std::move(result_list)) {}
 
-  CompleteList(CompleteResultFiles&& e)
-      : type_(Type::kFiles)
-      , items_(std::move(e)) {}
-
-  CompleteList(CompleteResultDirs&& e)
-      : type_(Type::kDirs)
-      , items_(std::move(e)) {}
-
-  CompleteList(CompleteResultDirsAndFiles&& e)
-      : type_(Type::kDirsAndFiles)
-      , items_(std::move(e)) {}
-
-  CompleteList(CompleteResultList&& e)
-      : type_(Type::kList)
-      , items_(std::move(e)) {}
-
-  CompleteList(CompleteResultListDescr&& e)
-      : type_(Type::kListDescr)
-      , items_(std::move(e)) {}
-
-  Type GetType() const {
-    return type_;
-  }
-
-  Variant& GetItems() {
-    return items_;
+  Type GetType() {
+    return result_list_->GetType();
   }
 
  private:
-  Type type_;
-  Variant items_;
+  std::unique_ptr<CompleteResult> result_list_;
 };
 
 using FuncComplete =
@@ -140,7 +142,7 @@ class Complete {
   }
 
   inline int ListSize() const {
-    return items_.size();
+    return items_->Size();
   }
 
   inline bool IsPathComplete() const {
@@ -150,9 +152,9 @@ class Complete {
  private:
   int Print(const std::vector<std::string>& args);
 
-  int PrintList(const std::vector<std::string>& list);
+  int PrintList(List& list);
 
-  int PrintItemsList(const std::vector<std::string>& list);
+  int PrintItemsList(List& list);
 
   void PrintListDescr(
       const std::vector<std::pair<std::string, std::string>>& list);
@@ -185,7 +187,7 @@ class Complete {
   int total_items_;
 
   // items of last show operation
-  std::vector<std::string> items_;
+  std::unique_ptr<List> items_;
 
   // if the list must be showed, even when there is only one element
   bool show_always_;
