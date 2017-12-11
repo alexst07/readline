@@ -224,6 +224,8 @@ class List {
 
 class ListItem: public List {
  public:
+  ListItem() = default;
+
   explicit ListItem(const std::vector<std::string>& list) {
     for (const auto& e : list) {
       items_.push_back(Item(Text(e)));

@@ -14,7 +14,6 @@ namespace readline {
 Complete::Complete(FuncComplete&& fn, Prompt& prompt)
     : item_sel_(-1)
     , fn_complete_(std::move(fn))
-    , complete_token_(false)
     , cursor_(prompt.GetCursorRef())
     , prompt_(prompt)
     , lines_show_(0)
@@ -75,7 +74,6 @@ void Complete::Hide() {
   full_screen_mode_ = false;
   all_items_mode_ = false;
   num_cols_ = 0;
-  complete_token_ = false;
 }
 
 void Complete::CleanLines() {
@@ -90,21 +88,22 @@ int Complete::Print(const std::vector<std::string>& args) {
   max_string_len_ = 0;
 
   if (fn_complete_) {
-    items_ = fn_complete_(args);
+    RetType ret_type;
+    std::tie(items_, ret_type, is_path_) = fn_complete_(args, false);
   } else {
     // if it is a new arg, the last arg is empty
     std::string last_arg = args.back();
 
-    is_path_ = true;
     std::string path;
     std::tie(path, std::ignore) = ParserPath(last_arg);
 
-    if (!IsDirectory(path)) {
+    if (IsDirectory(path)) {
+      is_path_ = true;
+      items_ = MatchDirList(args);
+    } else {
       is_path_ = false;
       return 0;
     }
-
-    items_ = MatchDirList(args);
   }
 
   return PrintList(*items_);
@@ -115,18 +114,14 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
   std::vector<std::string> items;
 
   if (fn_complete_) {
-    std::unique_ptr<List> list_items = fn_complete_(args);
+    std::unique_ptr<List> list_items;
+    RetType ret_type;
+    std::tie(list_items, ret_type, is_path_) = fn_complete_(args, true);
 
-    // if (list_result.GetType() == CompleteList::Type::kList) {
-    //   is_path_ = false;
-    //   items = boost::get<CompleteResultList>(list_result.GetItems())
-    //       .GetItems();
-    //
-    //   if (!last_arg.empty()) {
-    //     // uses only item that match
-    //     MatchArg(last_arg, *items);
-    //   }
-    // }
+    if (list_items->Size() == 1) {
+      sel_content_ = list_items->Value(0);
+      prompt_.ShowTip(list_items->Value(0));
+    }
   } else {
     is_path_ = true;
     std::string path;
@@ -144,11 +139,11 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
       // uses only item that match
       items = MatchArg(last_part, items);
     }
-  }
 
-  if (items.size() == 1) {
-    sel_content_ = items[0];
-    prompt_.ShowTip(items[0]);
+    if (items.size() == 1) {
+      sel_content_ = items[0];
+      prompt_.ShowTip(items[0]);
+    }
   }
 }
 
@@ -193,7 +188,6 @@ int Complete::PrintList(List& list) {
 }
 
 int Complete::PrintItemsList(List& list) {
-  int lines = 0;
   total_items_ = list.Size();
 
   // calculates the number of needed lines
@@ -219,6 +213,7 @@ int Complete::PrintItemsList(List& list) {
       cursor_.GetStartLine() + prompt_.NumOfLines(), 1);
   std::cout << "\033[K";
 
+  int lines = 0;
   for (size_t i = 0; i < list.Size(); i++) {
     if (i%num_cols_ == 0 && i > 0) {
       ++lines;
@@ -251,7 +246,7 @@ int Complete::PrintItemsList(List& list) {
   }
 
   has_more_ = false;
-  return lines;
+  return lines == 0? 1:lines;
 }
 
 void Complete::PrintAllItems() {

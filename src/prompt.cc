@@ -52,14 +52,6 @@ void Prompt::EnterCompleteMode() {
 
     // insert '/' on the end of directory
     str_comp = DirectoryFormat(arg_path_init + str_comp);
-  } else {
-    // only complete if the argument is part of the selected option text
-    std::string trim_token = buf_.GetTrimToken(char_pos);
-    int find_pos = str_comp.find(trim_token);
-
-    if (find_pos == std::string::npos) {
-      return;
-    }
   }
 
   // replace the trim token by the selected option
@@ -350,7 +342,8 @@ void Prompt::AcceptTip() {
   // to the last token
   if (complete_.IsPathComplete()) {
     // insert '/' on the end of directory
-    std::string str_dir = buf_.Str() + tip_string_;
+    std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
+    std::string str_dir = args.back() + tip_string_;
     if (IsDirectory(str_dir)) {
       tip_string_ += "/";
     }

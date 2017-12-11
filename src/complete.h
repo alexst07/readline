@@ -11,8 +11,14 @@
 namespace readline {
 class Prompt;
 
-using FuncComplete =
-    std::function<std::unique_ptr<List>(const std::vector<std::string>&)>;
+enum class RetType {
+  FILES_DIR,
+  LIST,
+  DESCR
+};
+
+using FuncComplete = std::function<std::tuple<std::unique_ptr<List>, RetType,
+    bool>(const std::vector<std::string>&, bool)>;
 
 class Complete {
  public:
@@ -92,7 +98,6 @@ class Complete {
   int item_sel_;
   std::string complete_;
   FuncComplete fn_complete_;
-  bool complete_token_;
   Cursor& cursor_;
   Prompt& prompt_;
 
