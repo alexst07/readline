@@ -39,6 +39,10 @@ void Complete::Show(const std::vector<std::string>& args, bool show_always) {
   show_always_ = show_always;
 
   lines_show_ = Print(args);
+  if (lines_show_ == 0) {
+    show_ = false;
+  }
+
   cursor_.MoveToPos(pos);
 }
 
@@ -51,6 +55,10 @@ void Complete::Show() {
   }
 
   lines_show_ = PrintList(*items_);
+  if (lines_show_ == 0) {
+    show_ = false;
+  }
+
   cursor_.MoveToPos(pos);
 }
 
@@ -80,49 +88,26 @@ void Complete::CleanLines() {
 
 int Complete::Print(const std::vector<std::string>& args) {
   max_string_len_ = 0;
-  std::string last_arg = args.back();
 
   if (fn_complete_) {
-    CompleteList list_result(fn_complete_(args));
-
-    if (list_result.GetType() == CompleteList::Type::kList) {
-      is_path_ = false;
-      // items_ = boost::get<CompleteResultList>(list_result.GetItems())
-      //     .GetItems();
-
-      if (last_arg.empty()) {
-        return PrintList(*items_);
-      } else {
-        // uses only item that match
-        MatchArg(last_arg, items_.get());
-        return PrintList(*items_);
-      }
-    }
+    items_ = fn_complete_(args);
   } else {
+    // if it is a new arg, the last arg is empty
+    std::string last_arg = args.back();
+
     is_path_ = true;
     std::string path;
-    std::string last_part;
-    std::tie(path, last_part) = ParserPath(last_arg);
+    std::tie(path, std::ignore) = ParserPath(last_arg);
 
     if (!IsDirectory(path)) {
       is_path_ = false;
-      show_ = false;
       return 0;
     }
 
-    // on this part we can be certain, that it is a simple list and not
-    // a descr list, so we can use static cast
-    items_ = std::unique_ptr<List>(
-        new ListItem(ListDir(path, ListDirType::FILES_DIR)));
-
-    if (last_part.empty()) {
-      return PrintList(*items_);
-    } else {
-      // uses only item that match
-      MatchArg(last_part, items_.get());
-      return PrintList(*items_);
-    }
+    items_ = MatchDirList(args);
   }
+
+  return PrintList(*items_);
 }
 
 void Complete::CompleteTip(const std::vector<std::string>& args) {
@@ -130,7 +115,7 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
   std::vector<std::string> items;
 
   if (fn_complete_) {
-    CompleteList list_result(fn_complete_(args));
+    std::unique_ptr<List> list_items = fn_complete_(args);
 
     // if (list_result.GetType() == CompleteList::Type::kList) {
     //   is_path_ = false;
@@ -150,7 +135,6 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
 
     if (!IsDirectory(path)) {
       is_path_ = false;
-      show_ = false;
       return;
     }
 
@@ -165,11 +149,14 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
   if (items.size() == 1) {
     sel_content_ = items[0];
     prompt_.ShowTip(items[0]);
-    show_ = false;
   }
 }
 
 int Complete::PrintList(List& list) {
+  if (list.Size() <= 1) {
+    return 0;
+  }
+
   // get the max string len item
   if (max_string_len_ == 0) {
     max_string_len_ = list.MaxStringLen();
@@ -186,7 +173,6 @@ int Complete::PrintList(List& list) {
   }
 
   if (list.Empty()) {
-    show_ = false;
     return 0;
   }
 
@@ -195,7 +181,6 @@ int Complete::PrintList(List& list) {
   if (list.Size() == 1 && !show_always_) {
     sel_content_ = list.Value(0);
     prompt_.ShowTip(list.Value(0));
-    show_ = false;
     return 0;
   }
 

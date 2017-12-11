@@ -18,6 +18,7 @@ std::vector<std::string> SplitArgs(const std::string& line,
   boost::split(args, sub, boost::algorithm::is_space());
   bool new_arg = CheckNewArg(line, line_pos);
 
+  // if the last arg is empty, insert empty string
   if (new_arg) {
     args.push_back("");
   }
@@ -89,6 +90,27 @@ std::vector<std::string> MatchArg(const std::string& arg,
   return new_list;
  }
 
+ std::unique_ptr<List> MatchDirList(const std::vector<std::string>& args) {
+   // if it is a new arg, the last arg is empty
+   std::string last_arg = args.back();
+
+   std::string path;
+   std::string last_part;
+   std::tie(path, last_part) = ParserPath(last_arg);
+
+   // on this part we can be certain, that it is a simple list and not
+   // a descr list, so we can use static cast
+   std::unique_ptr<List> items_ = std::make_unique<ListItem>(
+      ListDir(path, ListDirType::FILES_DIR));
+
+   if (last_part.empty()) {
+     return items_;
+   } else {
+     // uses only item that match
+     MatchArg(last_part, items_.get());
+     return items_;
+   }
+ }
 
 std::tuple<std::string, std::string> ParserPath(const std::string& arg,
     bool supress_point) {

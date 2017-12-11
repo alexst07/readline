@@ -25,6 +25,8 @@ void MatchArg(const std::string& arg, List* list);
 std::vector<std::string> MatchArg(const std::string& arg,
     std::vector<std::string> list);
 
+std::unique_ptr<List> MatchDirList(const std::vector<std::string>& args);
+
 // parser the parser in last part and the rest, for example:
 // /home/alex/test
 // test is the last part and /home/alex/ is the rest

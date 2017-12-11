@@ -25,7 +25,9 @@ class Style {
 
 class Text {
  public:
- explicit Text(const std::string& str)
+  Text() = default;
+
+  explicit Text(const std::string& str)
      : str_(str)
      , str_with_style_(str) {}
 
@@ -81,29 +83,35 @@ class Text {
   std::string str_with_style_;
 };
 
+inline std::ostream& operator<<(std::ostream& stream, const Text& text) {
+  stream  << text.StrWithStyle();
+  return stream;
+}
+
 class Item {
  public:
-  Item(const std::string& value, Text&& text)
-      : value_(value)
-      , text_(std::move(text)) {}
+  explicit Item(Text&& text)
+      : text_(std::move(text)) {}
+
+  explicit Item(const Text& text)
+      : text_(text) {}
+
+  explicit Item(const std::string& str)
+      : text_(str) {}
 
   Item(const Item& item)
-      : value_(item.value_)
-      , text_(item.text_) {}
+      : text_(item.text_) {}
 
   Item& operator=(const Item& item) {
-    value_ = item.value_;
     text_ = item.text_;
 
     return *this;
   }
 
   Item(Item&& item)
-      : value_(std::move(item.value_))
-      , text_(std::move(item.text_)) {}
+      : text_(std::move(item.text_)) {}
 
   Item& operator=(Item&& item) {
-    value_ = std::move(item.value_);
     text_ = std::move(item.text_);
 
     return *this;
@@ -118,28 +126,24 @@ class Item {
   }
 
   const std::string& Value() const {
-    return value_;
+    return text_.Value();
   }
 
  private:
-  std::string value_;
   Text text_;
 };
 
 struct ItemDescr {
  public:
  ItemDescr(const std::string& value, Text&& label, Text&& desrc)
-     : value_(value)
-     , label_(std::move(label))
+     : label_(std::move(label))
      , descr_(std::move(desrc)) {}
 
  ItemDescr(const ItemDescr& item)
-     : value_(item.value_)
-     , label_(item.label_)
+     : label_(item.label_)
      , descr_(item.descr_) {}
 
  ItemDescr& operator=(const ItemDescr& item) {
-   value_ = item.value_;
    label_ = item.label_;
    descr_ = item.descr_;
 
@@ -147,12 +151,10 @@ struct ItemDescr {
  }
 
  ItemDescr(ItemDescr&& item)
-     : value_(std::move(item.value_))
-     , label_(std::move(item.label_))
+     : label_(std::move(item.label_))
      , descr_(std::move(item.descr_)) {}
 
  ItemDescr& operator=(ItemDescr&& item) {
-   value_ = std::move(item.value_);
    label_ = std::move(item.label_);
    descr_ = std::move(item.descr_);
 
@@ -160,15 +162,45 @@ struct ItemDescr {
  }
 
  void Print(size_t num_cols, size_t size_first_col) const {
+   std::string spaces = "";
+   for (int i = 0; i < (size_first_col - label_.Length()); i++) {
+     spaces += " ";
+   }
 
+   size_t max_string_len = num_cols - size_first_col - 2;
+   std::string descr;
+   if (descr_.Length() > max_string_len) {
+     descr = descr_.StrWithStyle().substr(size_first_col + 2,
+       max_string_len - 3);
+     descr += "...";
+   } else {
+     descr = descr_.StrWithStyle();
+   }
+
+   std::cout << label_ << spaces << ": " << descr;
+ }
+
+ size_t LabelLength() const {
+   return label_.Length();
+ }
+
+ size_t DescrLength() const {
+   return descr_.Length();
+ }
+
+ const std::string& LabelWithStyle() const {
+   return label_.StrWithStyle();
+ }
+
+ const std::string& DescrWithStyle() const {
+   return descr_.StrWithStyle();
  }
 
  const std::string& Value() const {
-   return value_;
+   return label_.Value();
  }
 
  private:
-  std::string value_;
   Text label_;
   Text descr_;
 };
@@ -194,14 +226,13 @@ class ListItem: public List {
  public:
   explicit ListItem(const std::vector<std::string>& list) {
     for (const auto& e : list) {
-      items_.push_back(Item(e, Text(e)));
+      items_.push_back(Item(Text(e)));
     }
   }
 
-  explicit ListItem(
-      const std::vector<std::pair<std::string, std::string>>& list) {
+  explicit ListItem(const std::vector<Text>& list) {
     for (const auto& e : list) {
-      items_.push_back(Item(e.first, Text(e.second)));
+      items_.push_back(Item(e));
     }
   }
 
@@ -210,13 +241,13 @@ class ListItem: public List {
 
   ListItem& operator=(std::vector<std::string>&& list) {
     for (const auto& e : list) {
-      items_.push_back(Item(e, Text(e)));
+      items_.push_back(Item(Text(e)));
     }
 
     return *this;
   }
 
-  void Print(size_t i, size_t num_cols) const override {
+  void Print(size_t i, size_t /*num_cols*/) const override {
     items_[i].Print();
   }
 
@@ -225,11 +256,19 @@ class ListItem: public List {
   }
 
   const std::string& StrWithStyle(size_t i) const override {
-    return items_[i].Value();
+    return items_[i].StrWithStyle();
   }
 
   size_t Size() const override {
     return items_.size();
+  }
+
+  void PushBack(const Text& text) {
+    items_.push_back(Item(text));
+  }
+
+  void PushBack(Text&& text) {
+    items_.push_back(Item(std::move(text)));
   }
 
   void EraseIf(std::function<bool(const std::string&)>&& fn) override {
@@ -258,9 +297,39 @@ class ListItem: public List {
   std::vector<Item> items_;
 };
 
-// class ListDescr: public List {
-//
-// };
+class ListDescr: public List {
+ public:
+  explicit ListDescr(std::vector<ItemDescr>&& items)
+      : items_(std::move(items))
+      , max_str_len_(0) {
+    for (const auto& e: items) {
+      size_t len = e.LabelLength();
+      if (len > max_str_len_) {
+        max_str_len_ = len;
+      }
+    }
+  }
+
+  void Print(size_t i, size_t num_cols) const override {
+    items_[i].Print(num_cols, max_str_len_);
+  }
+
+  const std::string& Value(size_t i) const override {
+    return items_[i].Value();
+  }
+
+  const std::string& StrWithStyle(size_t i) const override {
+    return items_[i].LabelWithStyle();
+  }
+
+  size_t Size() const override {
+    return items_.size();
+  }
+
+ private:
+  std::vector<ItemDescr> items_;
+  size_t max_str_len_;
+};
 
 }  // namespace readline
 

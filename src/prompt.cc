@@ -360,11 +360,12 @@ void Prompt::AcceptTip() {
 
   tip_string_ = "";
   HideTip();
-  cursor_.MoveToPos(buf_.Length());
 
   if (complete_.Showing()) {
     complete_.Hide();
   }
+
+  cursor_.MoveToPos(buf_.Length());
 }
 
 void Prompt::HideTip() {

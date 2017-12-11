@@ -11,83 +11,8 @@
 namespace readline {
 class Prompt;
 
-class CompleteResult {
- public:
-  enum class Type {
-    kFiles,
-    kDirs,
-    kDirsAndFiles,
-    kList,
-    kListDescr
-  };
-
-  CompleteResult(Type type): type_(type) {}
-
-  Type GetType() {
-    return type_;
-  }
-
- private:
-  Type type_;
-};
-
-class CompleteResultFiles: public CompleteResult {
- public:
-  CompleteResultFiles(): CompleteResult(CompleteResult::Type::kFiles) {}
-};
-
-class CompleteResultDirs: public CompleteResult {
- public:
-  CompleteResultDirs(): CompleteResult(CompleteResult::Type::kDirs) {}
-};
-
-class CompleteResultDirsAndFiles: public CompleteResult {
- public:
-  CompleteResultDirsAndFiles()
-      : CompleteResult(CompleteResult::Type::kDirsAndFiles) {}
-};
-
-class CompleteResultList: public CompleteResult {
- public:
-  CompleteResultList(std::vector<std::string>& items)
-      : CompleteResult(CompleteResult::Type::kList)
-      , items_(std::move(std::make_unique<ListItem>(items))) {}
-
-  std::unique_ptr<List> GetItemsPtr() {
-    return std::move(items_);
-  }
-
- private:
-  std::unique_ptr<List> items_;
-};
-
-class CompleteResultListDescr {
- public:
-  CompleteResultListDescr(
-      std::vector<std::pair<std::string, std::string>>&& items)
-      : items_(std::move(items)) {}
-
- private:
-  std::vector<std::pair<std::string, std::string>> items_;
-};
-
-class CompleteList {
- public:
-  using Type = CompleteResult::Type;
-
-  CompleteList(std::unique_ptr<CompleteResult> result_list)
-      : result_list_(std::move(result_list)) {}
-
-  Type GetType() {
-    return result_list_->GetType();
-  }
-
- private:
-  std::unique_ptr<CompleteResult> result_list_;
-};
-
 using FuncComplete =
-    std::function<CompleteList(const std::vector<std::string>&)>;
+    std::function<std::unique_ptr<List>(const std::vector<std::string>&)>;
 
 class Complete {
  public:
