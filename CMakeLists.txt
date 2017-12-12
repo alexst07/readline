@@ -17,6 +17,12 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+option(DEBUG_LOG OFF)
+
+if (DEBUG_LOG)
+  add_definitions(-DDEBUGLOG)
+endif()
+
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 find_package(Threads REQUIRED)
 

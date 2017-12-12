@@ -8,6 +8,7 @@
 #include "prompt.h"
 #include "scope-exit.h"
 #include "utils.h"
+#include "log.h"
 
 namespace readline {
 
@@ -77,6 +78,7 @@ void Complete::Hide() {
 }
 
 void Complete::CleanLines() {
+  LOG << "[CleanLines]\n";
   for (int i = 0; i <= lines_show_; i++) {
     cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines() + i,
         1);
@@ -85,6 +87,7 @@ void Complete::CleanLines() {
 }
 
 int Complete::Print(const std::vector<std::string>& args) {
+  LOG << "[Print]\n";
   max_string_len_ = 0;
 
   if (fn_complete_) {
@@ -110,9 +113,7 @@ int Complete::Print(const std::vector<std::string>& args) {
 }
 
 void Complete::CompleteTip(const std::vector<std::string>& args) {
-  std::string last_arg = args.back();
-  std::vector<std::string> items;
-
+  LOG << "[CompleteTip]\n";
   if (fn_complete_) {
     std::unique_ptr<List> list_items;
     RetType ret_type;
@@ -123,6 +124,8 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
       prompt_.ShowTip(list_items->Value(0));
     }
   } else {
+    std::vector<std::string> items;
+    std::string last_arg = args.back();
     is_path_ = true;
     std::string path;
     std::string last_part;
@@ -148,6 +151,7 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
 }
 
 int Complete::PrintList(List& list) {
+  LOG << "[PrintList]\n";
   if (list.Size() <= 1) {
     return 0;
   }
@@ -188,6 +192,7 @@ int Complete::PrintList(List& list) {
 }
 
 int Complete::PrintItemsList(List& list) {
+  LOG << "[PrintItemsList]\n";
   total_items_ = list.Size();
 
   // calculates the number of needed lines
@@ -213,6 +218,7 @@ int Complete::PrintItemsList(List& list) {
       cursor_.GetStartLine() + prompt_.NumOfLines(), 1);
   std::cout << "\033[K";
 
+  LOG << "ITEMS:\n";
   int lines = 0;
   for (size_t i = 0; i < list.Size(); i++) {
     if (i%num_cols_ == 0 && i > 0) {
@@ -236,6 +242,8 @@ int Complete::PrintItemsList(List& list) {
     cursor_.MoveToAbsolute(cursor_.GetStartLine() + prompt_.NumOfLines()+lines,
         pos_col + 1);
 
+    LOG << list.Value(i) << ", ";
+
     if (i == item_sel_) {
       sel_content_ = list.Value(i);
       std::cout << "\e[7m" << list.StrWithStyle(i) << "\033[0m";
@@ -245,11 +253,14 @@ int Complete::PrintItemsList(List& list) {
     }
   }
 
+  LOG << "\nEND ITEMS\n";
+
   has_more_ = false;
   return lines == 0? 1:lines;
 }
 
 void Complete::PrintAllItems() {
+  LOG << "[PrintAllItems]\n";
   int lines = 0;
 
   for (size_t i = 0; i < items_->Size(); i++) {
@@ -273,6 +284,7 @@ void Complete::PrintAllItems() {
 }
 
 int Complete::FullScreenMenu() {
+  LOG << "[FullScreenMenu]\n";
   has_more_ = false;
 
   // calculate the size of menu
@@ -311,6 +323,7 @@ int Complete::FullScreenMenu() {
 }
 
 int Complete::FullScreenTotalItems(int menu_size) {
+  LOG << "[FullScreenTotalItems]\n";
   // calculate the end item of full screen
   int last_items = (full_screen_line_ + menu_size)*num_cols_;
   last_items = last_items >= items_->Size()? items_->Size() - 1:last_items;
@@ -318,6 +331,7 @@ int Complete::FullScreenTotalItems(int menu_size) {
 }
 
 void Complete::FullScreenMenuWithBar(int menu_size) {
+  LOG << "[FullScreenMenuWithBar]\n";
   full_screen_mode_ = true;
   int lines = 0;
 
@@ -362,6 +376,7 @@ void Complete::FullScreenMenuWithBar(int menu_size) {
 }
 
 void Complete::SelCheck() {
+  LOG << "[SelCheck]\n";
   if (full_screen_mode_) {
     // calculate the size of menu
     TermSize term_size = Terminal::Size();
@@ -388,6 +403,7 @@ void Complete::SelCheck() {
 }
 
 void Complete::SelectFirstItem() {
+  LOG << "[SelectFirstItem]\n";
   auto cleanup = MakeScopeExit([&]() {
     SelCheck();
   });
@@ -397,6 +413,7 @@ void Complete::SelectFirstItem() {
 }
 
 void Complete::SelNextItem() {
+  LOG << "[SelNextItem]\n";
   auto cleanup = MakeScopeExit([&]() {
     SelCheck();
   });
@@ -429,6 +446,7 @@ void Complete::SelNextItem() {
 }
 
 void Complete::SelBackItem() {
+  LOG << "[SelBackItem]\n";
   auto cleanup = MakeScopeExit([&]() {
     SelCheck();
   });
@@ -449,6 +467,7 @@ void Complete::SelBackItem() {
 }
 
 void Complete::SelDownItem() {
+  LOG << "[SelDownItem]\n";
   auto show = MakeScopeExit([&]() {
     SelCheck();
   });
@@ -503,6 +522,7 @@ void Complete::SelDownItem() {
 }
 
 void Complete::SelUpItem() {
+  LOG << "[SelUpItem]\n";
   auto cleanup = MakeScopeExit([&]() {
     SelCheck();
   });
@@ -532,6 +552,7 @@ void Complete::SelUpItem() {
 }
 
 std::string Complete::UseSelContent() {
+  LOG << "[UseSelContent]\n";
   std::string content = sel_content_;
   sel_content_ = "";
   return content;

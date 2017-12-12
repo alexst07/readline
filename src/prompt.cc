@@ -7,6 +7,7 @@
 #include "cursor.h"
 #include "complete.h"
 #include "utils.h"
+#include "log.h"
 
 namespace readline {
 
@@ -28,6 +29,7 @@ void Prompt::Enter() {
 }
 
 void Prompt::EnterCompleteMode() {
+  LOG << "[EnterCompleteMode]\n";
   // get the argument
   int char_pos = cursor_.GetPos();
   int start_word = buf_.StartArgPos(char_pos);
@@ -64,6 +66,7 @@ void Prompt::EnterCompleteMode() {
 }
 
 void Prompt::Backspace() {
+  LOG << "[EnterCompleteMode]\n";
   int char_pos = cursor_.GetPos();
 
   if (char_pos == 0) {
@@ -87,6 +90,7 @@ void Prompt::Backspace() {
 }
 
 void Prompt::AddChar(char c) {
+  LOG << "[EnterCompleteMode]\n";
   int char_pos = cursor_.GetPos();
 
   // add new line, if it is on the end of the line
@@ -100,9 +104,11 @@ void Prompt::AddChar(char c) {
   cursor_.MoveToPos(char_pos + 1);
 
   if (tip_mode_) {
+    LOG << "Show tip from AddChar\n";
     ShowTip(original_tip_string_);
   } else {
     std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
+    LOG << "CompleteTip from AddChar\n";
     complete_.CompleteTip(args);
   }
 
@@ -110,6 +116,7 @@ void Prompt::AddChar(char c) {
   if (complete_.Showing()) {
     std::vector<std::string> args = SplitArgs(buf_.Str(), cursor_.GetPos());
     bool show_always = AlwaysShowComplete();
+    LOG << "Show from AddChar\n";
     complete_.Show(args, show_always);
 
     // if a space char is pressed, and this space was not escaped by \ char
@@ -295,6 +302,8 @@ void Prompt::AddLines(int n) {
 }
 
 void Prompt::ShowTip(std::string tip) {
+  LOG << "[ShowTip]\n";
+  LOG << "tip: " << tip << "\n";
   int char_pos = cursor_.GetPos();
 
   if (cursor_.GetPos() != buf_.Length()) {
@@ -309,7 +318,6 @@ void Prompt::ShowTip(std::string tip) {
   // if it is tip for path, we have to handle different from a normal token
   // we have to calculate intersection string with last part of path
   if (complete_.IsPathComplete()) {
-    std::string last_part;
     std::tie(std::ignore, trim_token) = ParserPath(trim_token,
         /*supress_point*/ true);
   }

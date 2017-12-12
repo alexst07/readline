@@ -2,9 +2,14 @@
 
 #include "src/readline.h"
 #include "src/utils.h"
+#include "src/log.h"
 
 int main() {
   using namespace readline;
+
+  Log::Instance("log.txt");
+
+  LOG << "TESTE_OTDER\n";
 
   std::function<std::tuple<std::unique_ptr<List>, RetType, bool>(
       const std::vector<std::string>&, bool)> fn =
@@ -15,6 +20,13 @@ int main() {
 
     if (params.size() < 3) {
       list = {"test1", "outro", "qualquer"};
+
+      if (tip) {
+        if (!params.back().empty()) {
+          // uses only item that match
+          list = MatchArg(params.back(), list);
+        }
+      }
       ret_type = RetType::LIST;
     } else {
       ret_type = RetType::FILES_DIR;
