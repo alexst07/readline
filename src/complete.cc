@@ -29,7 +29,25 @@ Complete::Complete(FuncComplete&& fn, Prompt& prompt)
     , max_string_len_(0)
     , all_items_mode_(false) {}
 
+void Complete::PrintAttr() {
+  LOG << "{" <<
+    "item_sel_: " << item_sel_ << ", " <<
+    "lines_show_: " << lines_show_ << ", " <<
+    "show_: " << show_ << ", " <<
+    "total_items_: " << total_items_ << ", " <<
+    "show_always_: " << show_always_ << ", " <<
+    "is_path_: " << is_path_ << ", " <<
+    "has_more_: " << has_more_ << ", " <<
+    "full_screen_mode_: " << full_screen_mode_ << ", " <<
+    "full_screen_line_: " << full_screen_line_ << ", " <<
+    "max_string_len_: " << max_string_len_ << ", " <<
+    "all_items_mode_: " << all_items_mode_ <<
+  "}\n";
+}
+
 void Complete::Show(const std::vector<std::string>& args, bool show_always) {
+  LOG << "[Show 1]\n";
+  LOG.LogContainner(args);
   int pos = cursor_.GetPos();
   if (show_) {
     Hide();
@@ -47,6 +65,7 @@ void Complete::Show(const std::vector<std::string>& args, bool show_always) {
 }
 
 void Complete::Show() {
+  LOG << "[Show 2]\n";
   int pos = cursor_.GetPos();
   if (show_) {
     CleanLines();
@@ -63,6 +82,7 @@ void Complete::Show() {
 }
 
 void Complete::Hide() {
+  LOG << "[Hide]\n";
   CleanLines();
   show_ = false;
   item_sel_ = -1;
@@ -88,11 +108,15 @@ void Complete::CleanLines() {
 
 int Complete::Print(const std::vector<std::string>& args) {
   LOG << "[Print]\n";
+  PrintAttr();
   max_string_len_ = 0;
 
   if (fn_complete_) {
     RetType ret_type;
     std::tie(items_, ret_type, is_path_) = fn_complete_(args, false);
+    if (!is_path_) {
+      MatchArg(args.back(), &*items_);
+    }
   } else {
     // if it is a new arg, the last arg is empty
     std::string last_arg = args.back();
@@ -114,6 +138,7 @@ int Complete::Print(const std::vector<std::string>& args) {
 
 void Complete::CompleteTip(const std::vector<std::string>& args) {
   LOG << "[CompleteTip]\n";
+  PrintAttr();
   if (fn_complete_) {
     std::unique_ptr<List> list_items;
     RetType ret_type;
@@ -152,6 +177,7 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
 
 int Complete::PrintList(List& list) {
   LOG << "[PrintList]\n";
+  PrintAttr();
   if (list.Size() <= 1) {
     return 0;
   }
@@ -193,6 +219,7 @@ int Complete::PrintList(List& list) {
 
 int Complete::PrintItemsList(List& list) {
   LOG << "[PrintItemsList]\n";
+  PrintAttr();
   total_items_ = list.Size();
 
   // calculates the number of needed lines

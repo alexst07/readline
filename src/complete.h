@@ -80,6 +80,8 @@ class Complete {
     return is_path_;
   }
 
+  void PrintAttr();
+
  private:
   int Print(const std::vector<std::string>& args);
 

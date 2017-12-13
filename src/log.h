@@ -33,6 +33,17 @@ class Log {
     return *this;
   }
 
+  template<class T>
+  void LogContainner(const T v) {
+#ifdef DEBUGLOG
+    logfile_ << "[";
+    for (const auto& i : v) {
+      logfile_ << i << ", ";
+    }
+    logfile_ << "]";
+#endif
+  }
+
  private:
   Log(const std::string fname) {
 #ifdef DEBUGLOG

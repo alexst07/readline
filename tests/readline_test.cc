@@ -19,7 +19,7 @@ int main() {
     RetType ret_type;
 
     if (params.size() < 3) {
-      list = {"test1", "outro", "qualquer"};
+      list = {"test1", "outro", "qualquer", "test2"};
 
       if (tip) {
         if (!params.back().empty()) {

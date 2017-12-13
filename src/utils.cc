@@ -23,6 +23,12 @@ std::vector<std::string> SplitArgs(const std::string& line,
     args.push_back("");
   }
 
+  if (args.size() > 2) {
+    if (args[args.size() - 1].empty() && args[args.size() - 2].empty()) {
+      args.pop_back();
+    }
+  }
+
   return args;
 }
 

@@ -56,13 +56,23 @@ void Prompt::EnterCompleteMode() {
     str_comp = DirectoryFormat(arg_path_init + str_comp);
   }
 
+  int current_length = buf_.Length();
+
   // replace the trim token by the selected option
   buf_.ReplaceStringInterval(str_comp, start_word, end_word);
+
   complete_.Hide();
   end_word = buf_.EndArgPos(char_pos);
+
   HideTip();
   Reprint();
   cursor_.MoveToPos(end_word);
+
+  // insert whitespace if it is in the end of string and is not directory
+  if (char_pos == current_length && str_comp[str_comp.length() - 1] != '/') {
+    buf_.AddString(" ", buf_.Length());
+    cursor_.MoveToPos(buf_.Length());
+  }
 }
 
 void Prompt::Backspace() {
@@ -90,7 +100,7 @@ void Prompt::Backspace() {
 }
 
 void Prompt::AddChar(char c) {
-  LOG << "[EnterCompleteMode]\n";
+  LOG << "[AddChar]\n";
   int char_pos = cursor_.GetPos();
 
   // add new line, if it is on the end of the line
@@ -346,6 +356,7 @@ void Prompt::ShowTip(std::string tip) {
 }
 
 void Prompt::AcceptTip() {
+  bool is_path = false;
   // tip is only showed on last token, so we have only to add the tip string
   // to the last token
   if (complete_.IsPathComplete()) {
@@ -354,10 +365,11 @@ void Prompt::AcceptTip() {
     std::string str_dir = args.back() + tip_string_;
     if (IsDirectory(str_dir)) {
       tip_string_ += "/";
+      is_path = true;
     }
   }
 
-  buf_.AddString(tip_string_, buf_.Length());
+  buf_.AddString(is_path?tip_string_:tip_string_+ " ", buf_.Length());
 
   tip_string_ = "";
   HideTip();
