@@ -61,6 +61,8 @@ int main() {
 
   Readline readline;
   readline.SetCompleteFunc(std::move(fn));
+  readline.AddHistoryString("git commit -m \"assdf\"");
+  readline.AddHistoryString("ls");
   std::string line = readline.Prompt(">> ");
   std::cout << "string: " << line << std::endl;
   return 0;

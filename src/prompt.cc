@@ -11,11 +11,12 @@
 
 namespace readline {
 
-Prompt::Prompt(const std::string& str_prompt, FuncComplete&& fn)
+Prompt::Prompt(const std::string& str_prompt, History& hist, FuncComplete&& fn)
     : str_prompt_(str_prompt)
     , cursor_(GetCursorPosition().line, str_prompt_.length())
     , complete_(std::move(fn), *this)
-    , tip_mode_(false) {
+    , tip_mode_(false)
+    , hist_(hist) {
   std::cout << str_prompt_ << std::flush;
   cursor_.MoveToPos(0);
 }
@@ -97,6 +98,10 @@ void Prompt::Backspace() {
   std::vector<std::string> args;
   args.push_back("");
   complete_.CompleteTip(args);
+
+  if (hist_.IsInHistMode()) {
+    hist_.ExitHistMode();
+  }
 }
 
 void Prompt::AddChar(char c) {
@@ -137,6 +142,10 @@ void Prompt::AddChar(char c) {
       }
     }
   }
+
+  if (hist_.IsInHistMode()) {
+    hist_.ExitHistMode();
+  }
 }
 
 void Prompt::RightArrow() {
@@ -168,6 +177,20 @@ void Prompt::UpArrow() {
 
   if (IsInCompleteMode()) {
     complete_.SelUpItem();
+  } else {
+    LOG << "UpArrow [History.GetNext]\n";
+    // select next item from history
+    if (hist_.HasNext()) {
+      LOG << "UpArrow [History.HasNext]\n";
+
+      if (!hist_.IsInHistMode()) {
+        current_cmd_ = buf_.Str();
+      }
+
+      buf_ = hist_.GetNext() + " ";
+      Reprint();
+      cursor_.MoveToPos(buf_.Length());
+    }
   }
 }
 
@@ -178,6 +201,19 @@ void Prompt::DownArrow() {
 
   if (IsInCompleteMode()) {
     complete_.SelDownItem();
+  } else {
+    LOG << "DownArrow [History.GetPreviews]\n";
+    // select next item from history
+    if (hist_.HasPreviews()) {
+      LOG << "UpArrow [History.HasPreviews]\n";
+      buf_ = hist_.GetPreviews() + " ";
+      Reprint();
+      cursor_.MoveToPos(buf_.Length());
+    } else if (hist_.IsInHistMode()) {
+      buf_ = current_cmd_;
+      Reprint();
+      cursor_.MoveToPos(buf_.Length());
+    }
   }
 }
 
@@ -189,19 +225,35 @@ void Prompt::AdvanceCursor() {
   }
 
   cursor_.MoveToPos(char_pos + 1);
+
+  if (hist_.IsInHistMode()) {
+    hist_.ExitHistMode();
+  }
 }
 
 void Prompt::BackwardCursor() {
   cursor_.MoveBackward(1);
+
+  if (hist_.IsInHistMode()) {
+    hist_.ExitHistMode();
+  }
 }
 
 void Prompt::CursorToEnd() {
   int len = buf_.Length();
   cursor_.MoveToPos(len);
+
+  if (hist_.IsInHistMode()) {
+    hist_.ExitHistMode();
+  }
 }
 
 void Prompt::CursorToBegin() {
   cursor_.MoveToPos(0);
+
+  if (hist_.IsInHistMode()) {
+    hist_.ExitHistMode();
+  }
 }
 
 void Prompt::Delete() {
@@ -215,6 +267,10 @@ void Prompt::Delete() {
   buf_.RemoveChar(char_pos);
   Reprint();
   cursor_.MoveToPos(char_pos);
+
+  if (hist_.IsInHistMode()) {
+    hist_.ExitHistMode();
+  }
 }
 
 void Prompt::EraseFromBeginToEnd() {
@@ -252,6 +308,10 @@ void Prompt::RemoveBackwardToken() {
   }
 
   cursor_.MoveToPos(pos);
+
+  if (hist_.IsInHistMode()) {
+    hist_.ExitHistMode();
+  }
 }
 
 void Prompt::Tab() {

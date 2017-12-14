@@ -15,6 +15,10 @@ const std::string& BufferString::Str() const {
   return content_;
 }
 
+BufferString& BufferString::operator=(const std::string& content) {
+  content_ = content;
+}
+
 BufferString operator+(const BufferString& bufstr, char c) {
   std::string str = bufstr.content_ + c;
 

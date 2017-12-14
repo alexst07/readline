@@ -15,6 +15,8 @@ class BufferString {
 
   BufferString(BufferString&& bufstr): content_(std::move(bufstr.content_)) {}
 
+  BufferString& operator=(const std::string& content);
+
   void PopBack();
 
   void RemoveChar(int n);

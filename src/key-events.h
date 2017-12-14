@@ -3,12 +3,13 @@
 
 #include "cursor.h"
 #include "prompt.h"
+#include "history.h"
 
 namespace readline {
 
 class KeyEvents {
  public:
-  KeyEvents() = default;
+  KeyEvents(History& hist): hist_(hist) {}
 
   std::string Loop(const std::string& msg, FuncComplete&& fn);
 
@@ -17,7 +18,7 @@ class KeyEvents {
   void CtrlCommandsKey(Prompt& prompt);
 
  private:
-
+  History& hist_;
 };
 
 }  // namespace readline

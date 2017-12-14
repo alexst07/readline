@@ -17,7 +17,7 @@ void Readline::SetCompleteFunc(FuncComplete&& fn) {
 std::string Readline::Prompt(const std::string& prompt) {
   FuncComplete fn(fn_complete_);
   struct termios old_tio, new_tio;
-  KeyEvents key_events;
+  KeyEvents key_events(hist_);
 
   // get the terminal settings for stdin
   tcgetattr(STDIN_FILENO,&old_tio);
@@ -37,6 +37,10 @@ std::string Readline::Prompt(const std::string& prompt) {
   tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
 
   return line;
+}
+
+void Readline::AddHistoryString(const std::string cmd) {
+  hist_.Push(cmd);
 }
 
 }  // namespace readline

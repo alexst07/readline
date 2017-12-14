@@ -4,12 +4,13 @@
 #include "buffer-string.h"
 #include "cursor.h"
 #include "complete.h"
+#include "history.h"
 
 namespace readline {
 
 class Prompt {
  public:
-  Prompt(const std::string& str_prompt, FuncComplete&& fn);
+  Prompt(const std::string& str_prompt, History& hist, FuncComplete&& fn);
 
   void Enter();
 
@@ -98,6 +99,8 @@ class Prompt {
   bool tip_mode_;
   std::string tip_string_;
   std::string original_tip_string_;
+  History& hist_;
+  std::string current_cmd_;
 };
 
 }  // namespace readline
