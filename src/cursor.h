@@ -83,6 +83,10 @@ class Cursor {
     start_line_ = n;
   }
 
+  inline void SetStartCol(int n) {
+    start_col_ = n;
+  }
+
   inline int GetStartCol() {
     return start_col_;
   }

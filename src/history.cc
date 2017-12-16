@@ -24,8 +24,12 @@ void History::Push(const std::string& str_cmd) {
 }
 
 bool History::SearchQuery(const std::string& str_cmd) {
+  if (IsInSearchMode()) {
+    search_query_.clear();
+  }
+
   for (const auto& e : list_) {
-    if (e.find(str_cmd)) {
+    if (e.find(str_cmd) != std::string::npos) {
       search_query_.push_back(e);
     }
   }
@@ -88,6 +92,10 @@ const std::string& History::GetPreviews() {
   return *it;
 }
 
+bool History::HasSearchResult() {
+  return search_query_.size() > 0;
+}
+
 bool History::HasNext() {
   if (hist_counter_ >= list_.size()) {
     return false;
@@ -115,10 +123,11 @@ bool History::IsInHistMode() {
 }
 
 bool History::IsInSearchMode() {
-  return search_mode_;
+  return search_query_.size() > 0;
 }
 
 void History::ExitSearchMode() {
+  search_query_.clear();
   search_counter_ = 0;
   search_mode_ = false;
 }

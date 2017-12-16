@@ -18,6 +18,8 @@ class Prompt {
 
   void AddChar(char c);
 
+  void Search();
+
   void RightArrow();
 
   void LeftArrow();
@@ -81,7 +83,11 @@ class Prompt {
 
   void Reprint();
 
+  void SearchPrint();
+
   int PosCursonOnBuf();
+
+  void SearchExec(const std::string& search_cmd);
 
   inline bool AlwaysShowComplete() {
     bool show_always = false;
@@ -101,6 +107,7 @@ class Prompt {
   std::string original_tip_string_;
   History& hist_;
   std::string current_cmd_;
+  std::string search_cmd_;
 };
 
 }  // namespace readline

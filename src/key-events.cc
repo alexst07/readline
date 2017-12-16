@@ -24,6 +24,10 @@ std::string KeyEvents::Loop(const std::string& msg, FuncComplete&& fn) {
         prompt.RemoveBackwardToken();
         break;
 
+      case 18:  // CTRL+backspace
+        prompt.Search();
+        break;
+
       case 9: // TAB
         prompt.Tab();
         break;

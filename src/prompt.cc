@@ -11,6 +11,8 @@
 
 namespace readline {
 
+const char* SEARCH_PROMPT = "Search ";
+
 Prompt::Prompt(const std::string& str_prompt, History& hist, FuncComplete&& fn)
     : str_prompt_(str_prompt)
     , cursor_(GetCursorPosition().line, str_prompt_.length())
@@ -26,6 +28,11 @@ void Prompt::Enter() {
     EnterCompleteMode();
   } else if (tip_mode_) {
     AcceptTip();
+  }
+
+  if (hist_.IsInSearchMode()) {
+    hist_.ExitSearchMode();
+    Reprint();
   }
 }
 
@@ -78,6 +85,12 @@ void Prompt::EnterCompleteMode() {
 
 void Prompt::Backspace() {
   LOG << "[EnterCompleteMode]\n";
+
+  if (hist_.IsInSearchMode()) {
+    SearchExec(search_cmd_.substr(0, search_cmd_.length()-1));
+    return;
+  }
+
   int char_pos = cursor_.GetPos();
 
   if (char_pos == 0) {
@@ -106,6 +119,14 @@ void Prompt::Backspace() {
 
 void Prompt::AddChar(char c) {
   LOG << "[AddChar]\n";
+
+  // if it is in search mode, only add a char on the end of search string
+  if (hist_.IsInSearchMode()) {
+    search_cmd_ += c;
+    SearchExec(search_cmd_);
+    return;
+  }
+
   int char_pos = cursor_.GetPos();
 
   // add new line, if it is on the end of the line
@@ -146,6 +167,28 @@ void Prompt::AddChar(char c) {
   if (hist_.IsInHistMode()) {
     hist_.ExitHistMode();
   }
+}
+
+void Prompt::Search() {
+  if (hist_.IsInSearchMode()) {
+    SearchExec(search_cmd_);
+  } else {
+    SearchExec(buf_.Str());
+  }
+}
+
+void Prompt::SearchExec(const std::string& search_cmd) {
+  if (!hist_.IsInSearchMode() ||  search_cmd_ != search_cmd) {
+    hist_.SearchQuery(search_cmd);
+    search_cmd_ = search_cmd;
+  }
+
+  if (hist_.HasSearchResult()) {
+    current_cmd_ = search_cmd;
+    buf_ = hist_.GetSearchResult();
+  }
+
+  Reprint();
 }
 
 void Prompt::RightArrow() {
@@ -450,10 +493,27 @@ void Prompt::HideTip() {
 }
 
 void Prompt::Reprint() {
+  if (hist_.IsInSearchMode()) {
+    cursor_.SetStartCol(std::string(SEARCH_PROMPT).length());
+    SearchPrint();
+    return;
+  } else {
+    cursor_.SetStartCol(str_prompt_.length());
+  }
+
   EraseFromBeginToEnd();
 
   cursor_.MoveToAbsolute(cursor_.GetStartLine(), 1);
   std::string content = str_prompt_ + buf_.Str();
+  std::cout << content << std::flush;
+}
+
+void Prompt::SearchPrint() {
+  EraseFromBeginToEnd();
+
+  cursor_.MoveToAbsolute(cursor_.GetStartLine(), 1);
+  std::string content = std::string(SEARCH_PROMPT) + "'" + search_cmd_ +
+      "': " + buf_.Str();
   std::cout << content << std::flush;
 }
 

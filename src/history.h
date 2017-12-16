@@ -23,6 +23,8 @@ class History {
 
   const std::string& GetNext();
 
+  bool HasSearchResult();
+
   bool HasNext();
 
   bool HasPreviews();
