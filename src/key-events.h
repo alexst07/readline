@@ -11,7 +11,8 @@ class KeyEvents {
  public:
   KeyEvents(History& hist): hist_(hist) {}
 
-  std::string Loop(const std::string& msg, FuncComplete&& fn);
+  std::string Loop(const Text& msg, FuncComplete&& fn,
+      FuncHighlight&& fn_highlight);
 
   void CommandsKey(Prompt& prompt);
 

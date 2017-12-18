@@ -59,11 +59,38 @@ int main() {
         std::unique_ptr<List>(new ListItem(list)), ret_type, is_path);
   };
 
+  std::function<Text(const std::string&)> fn_color = [](
+      const std::string& str) {
+    Text text;
+    text << Style("\e[34m");
+
+    for (int i = 0; i < str.length(); i++) {
+      if (str[i] == ' ') {
+        text << Style("\e[0m");
+      }
+
+      char c = str[i];
+      std::string s;
+      s += c;
+      text << s;
+    }
+
+    return text;
+  };
+
   Readline readline;
   readline.SetCompleteFunc(std::move(fn));
+  readline.SetHighlightFunc(std::move(fn_color));
   readline.AddHistoryString("git commit -m \"assdf\"");
+  readline.AddHistoryString("git add");
+  readline.AddHistoryString("git rm");
   readline.AddHistoryString("ls");
-  std::string line = readline.Prompt(">> ");
+  readline.AddHistoryString("cd home");
+  Text prompt;
+  prompt << Style("\e[34m");
+  prompt << ">> ";
+  prompt << Style("\e[0m");
+  std::string line = readline.Prompt(prompt);
   std::cout << "string: " << line << std::endl;
   return 0;
 }

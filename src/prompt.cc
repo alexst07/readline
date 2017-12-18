@@ -13,12 +13,14 @@ namespace readline {
 
 const char* SEARCH_PROMPT = "Search ";
 
-Prompt::Prompt(const std::string& str_prompt, History& hist, FuncComplete&& fn)
+Prompt::Prompt(const Text& str_prompt, History& hist, FuncComplete&& fn,
+  FuncHighlight&& fn_highlight)
     : str_prompt_(str_prompt)
-    , cursor_(GetCursorPosition().line, str_prompt_.length())
+    , cursor_(GetCursorPosition().line, str_prompt_.Length())
     , complete_(std::move(fn), *this)
     , tip_mode_(false)
-    , hist_(hist) {
+    , hist_(hist)
+    , fn_highlight_(std::move(fn_highlight)) {
   std::cout << str_prompt_ << std::flush;
   cursor_.MoveToPos(0);
 }
@@ -33,6 +35,7 @@ void Prompt::Enter() {
   if (hist_.IsInSearchMode()) {
     hist_.ExitSearchMode();
     Reprint();
+    cursor_.MoveToPos(buf_.Str().length());
   }
 }
 
@@ -122,8 +125,7 @@ void Prompt::AddChar(char c) {
 
   // if it is in search mode, only add a char on the end of search string
   if (hist_.IsInSearchMode()) {
-    search_cmd_ += c;
-    SearchExec(search_cmd_);
+    SearchExec(search_cmd_ + c);
     return;
   }
 
@@ -179,6 +181,7 @@ void Prompt::Search() {
 
 void Prompt::SearchExec(const std::string& search_cmd) {
   if (!hist_.IsInSearchMode() ||  search_cmd_ != search_cmd) {
+    LOG << "Prompt:SearchQuery" << search_cmd << "\n";
     hist_.SearchQuery(search_cmd);
     search_cmd_ = search_cmd;
   }
@@ -186,6 +189,7 @@ void Prompt::SearchExec(const std::string& search_cmd) {
   if (hist_.HasSearchResult()) {
     current_cmd_ = search_cmd;
     buf_ = hist_.GetSearchResult();
+    LOG << "Prompt:HasSearchResult" << buf_.Str() << "\n";
   }
 
   Reprint();
@@ -494,17 +498,24 @@ void Prompt::HideTip() {
 
 void Prompt::Reprint() {
   if (hist_.IsInSearchMode()) {
-    cursor_.SetStartCol(std::string(SEARCH_PROMPT).length());
     SearchPrint();
     return;
   } else {
-    cursor_.SetStartCol(str_prompt_.length());
+    cursor_.SetStartCol(str_prompt_.Length());
   }
 
   EraseFromBeginToEnd();
 
   cursor_.MoveToAbsolute(cursor_.GetStartLine(), 1);
-  std::string content = str_prompt_ + buf_.Str();
+  std::string content;
+
+  if (fn_highlight_) {
+    content = str_prompt_ + (fn_highlight_(buf_.Str()) << Style("\e[0m"))
+        .StrWithStyle();
+  } else {
+    content = str_prompt_ + buf_.Str();
+  }
+
   std::cout << content << std::flush;
 }
 
@@ -512,8 +523,10 @@ void Prompt::SearchPrint() {
   EraseFromBeginToEnd();
 
   cursor_.MoveToAbsolute(cursor_.GetStartLine(), 1);
-  std::string content = std::string(SEARCH_PROMPT) + "'" + search_cmd_ +
-      "': " + buf_.Str();
+  std::string promp_search = std::string(SEARCH_PROMPT) + "'" + search_cmd_ +
+      "': ";
+  std::string content = promp_search + buf_.Str();
+  cursor_.SetStartCol(promp_search.length());
   std::cout << content << std::flush;
 }
 

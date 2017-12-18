@@ -8,9 +8,11 @@
 
 namespace readline {
 
+using FuncHighlight = std::function<Text(const std::string&)>;
+
 class Prompt {
  public:
-  Prompt(const std::string& str_prompt, History& hist, FuncComplete&& fn);
+  Prompt(const Text& str_prompt, History& hist, FuncComplete&& fn, FuncHighlight&& fn_highlight);
 
   void Enter();
 
@@ -98,7 +100,7 @@ class Prompt {
     return show_always;
   }
 
-  std::string str_prompt_;
+  Text str_prompt_;
   BufferString buf_;
   Cursor cursor_;
   Complete complete_;
@@ -108,6 +110,7 @@ class Prompt {
   History& hist_;
   std::string current_cmd_;
   std::string search_cmd_;
+  FuncHighlight fn_highlight_;
 };
 
 }  // namespace readline

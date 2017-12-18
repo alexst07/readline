@@ -24,13 +24,16 @@ void History::Push(const std::string& str_cmd) {
 }
 
 bool History::SearchQuery(const std::string& str_cmd) {
+  LOG << "SearchQuery:" << str_cmd << "\n";
   if (IsInSearchMode()) {
     search_query_.clear();
+    search_counter_ = 0;
   }
 
   for (const auto& e : list_) {
     if (e.find(str_cmd) != std::string::npos) {
       search_query_.push_back(e);
+      LOG << "search_query_.push_back:" << e << "\n";
     }
   }
 
@@ -47,6 +50,7 @@ const std::string& History::GetSearchResult() {
     search_counter_ = 0;
   }
 
+  LOG << "search_query_.at:" << search_query_.at(search_counter_) << "\n";
   return search_query_.at(search_counter_++);
 }
 

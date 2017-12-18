@@ -6,6 +6,7 @@
 
 #include "complete.h"
 #include "history.h"
+#include "prompt.h"
 
 namespace readline {
 
@@ -15,12 +16,15 @@ class Readline {
 
   void SetCompleteFunc(FuncComplete&& fn);
 
-  std::string Prompt(const std::string& prompt);
+  void SetHighlightFunc(FuncHighlight&& fn);
+
+  std::string Prompt(const Text& prompt);
 
   void AddHistoryString(const std::string cmd);
 
  private:
   FuncComplete fn_complete_;
+  FuncHighlight fn_highlight_;
   History hist_;
 };
 

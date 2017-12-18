@@ -6,8 +6,9 @@
 
 namespace readline {
 
-std::string KeyEvents::Loop(const std::string& msg, FuncComplete&& fn) {
-  Prompt prompt(msg, hist_, std::move(fn));
+std::string KeyEvents::Loop(const Text& msg, FuncComplete&& fn,
+    FuncHighlight&& fn_highlight) {
+  Prompt prompt(msg, hist_, std::move(fn), std::move(fn_highlight));
   unsigned char c;
 
   do {

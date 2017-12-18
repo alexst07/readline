@@ -65,6 +65,8 @@ class Text {
     return str_.length();
   }
 
+  friend Text operator+ (const Text& text, const std::string& val);
+
   Text& operator<< (const std::string& val) {
     str_ += val;
     str_with_style_ += val;
@@ -78,10 +80,23 @@ class Text {
     return *this;
   }
 
+  operator std::string() const {
+    return str_with_style_;
+  }
+
  private:
   std::string str_;
   std::string str_with_style_;
 };
+
+inline Text operator+(const Text& text, const std::string& val) {
+  Text t;
+  t.str_ = text.str_;
+  t.str_with_style_ = text.str_with_style_;
+  t << val;
+
+  return t;
+}
 
 inline std::ostream& operator<<(std::ostream& stream, const Text& text) {
   stream  << text.StrWithStyle();

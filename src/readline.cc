@@ -14,8 +14,13 @@ void Readline::SetCompleteFunc(FuncComplete&& fn) {
   fn_complete_ = std::move(fn);
 }
 
-std::string Readline::Prompt(const std::string& prompt) {
+void Readline::SetHighlightFunc(FuncHighlight&& fn) {
+  fn_highlight_ = std::move(fn);
+}
+
+std::string Readline::Prompt(const Text& prompt) {
   FuncComplete fn(fn_complete_);
+  FuncHighlight fn_highlight(fn_highlight_);
   struct termios old_tio, new_tio;
   KeyEvents key_events(hist_);
 
@@ -31,7 +36,8 @@ std::string Readline::Prompt(const std::string& prompt) {
   // set the new settings immediately
   tcsetattr(STDIN_FILENO,TCSANOW,&new_tio);
 
-  std::string line = key_events.Loop(prompt, std::move(fn));
+  std::string line = key_events.Loop(prompt, std::move(fn),
+      std::move(fn_highlight_));
 
   // restore the former settings
   tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
