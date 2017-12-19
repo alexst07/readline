@@ -23,7 +23,10 @@ std::vector<std::string> ListDir(const std::string& dir, ListDirType t);
 void MatchArg(const std::string& arg, List* list);
 
 std::vector<std::string> MatchArg(const std::string& arg,
-    std::vector<std::string> list);
+    std::vector<std::string>& list);
+
+std::vector<ItemDescr> MatchArg(const std::string& arg,
+    std::vector<ItemDescr>& list);
 
 std::unique_ptr<List> MatchDirList(const std::vector<std::string>& args);
 

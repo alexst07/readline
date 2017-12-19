@@ -84,7 +84,7 @@ void MatchArg(const std::string& arg, List* list) {
 }
 
 std::vector<std::string> MatchArg(const std::string& arg,
-    std::vector<std::string> list) {
+    std::vector<std::string>& list) {
   std::vector<std::string> new_list;
 
   for (const auto& item: list) {
@@ -95,6 +95,20 @@ std::vector<std::string> MatchArg(const std::string& arg,
 
   return new_list;
  }
+
+std::vector<ItemDescr> MatchArg(const std::string& arg,
+     std::vector<ItemDescr>& list) {
+   std::vector<ItemDescr> new_list;
+
+   for (const auto& item: list) {
+     if (item.Value().find(arg) == 0) {
+       new_list.push_back(item);
+     }
+   }
+
+   return new_list;
+  }
+
 
  std::unique_ptr<List> MatchDirList(const std::vector<std::string>& args) {
    // if it is a new arg, the last arg is empty

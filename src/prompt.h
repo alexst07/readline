@@ -12,7 +12,8 @@ using FuncHighlight = std::function<Text(const std::string&)>;
 
 class Prompt {
  public:
-  Prompt(const Text& str_prompt, History& hist, FuncComplete&& fn, FuncHighlight&& fn_highlight);
+  Prompt(const Text& str_prompt, History& hist, FuncComplete&& fn,
+    FuncHighlight&& fn_highlight);
 
   void Enter();
 

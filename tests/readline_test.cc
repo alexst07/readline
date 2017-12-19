@@ -18,7 +18,7 @@ int main() {
     bool is_path = false;
     RetType ret_type;
 
-    if (params.size() < 3) {
+    if (params.size() <= 1) {
       list = {"test1", "outro", "qualquer", "test2"};
 
       if (tip) {
@@ -28,6 +28,22 @@ int main() {
         }
       }
       ret_type = RetType::LIST;
+    } else if (params.size() == 2) {
+      std::vector<ItemDescr> list_descr = {
+        ItemDescr("val1", Text("val1sdfasd"), Text("a short description for test maybe asdf asdf asdf ")),
+        ItemDescr("val2", Text("val2asdfasdfaers"), Text("a short description2asdf a asdf asdf ewfas afsd asdf asdf asdfasdf asdf asdf asdf asdf asdf asd fasdf asdf asdf asdf aera")),
+        ItemDescr("nice", Text("nice"), Text("a nice description"))
+      };
+
+      if (tip) {
+        if (!params.back().empty()) {
+          // uses only item that match
+          list_descr = MatchArg(params.back(), list_descr);
+        }
+      }
+
+      return std::tuple<std::unique_ptr<List>, RetType, bool>(
+          std::unique_ptr<List>(new ListDescr(std::move(list_descr))), ret_type, is_path);
     } else {
       ret_type = RetType::FILES_DIR;
       std::string last_arg = params.back();

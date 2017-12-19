@@ -80,6 +80,11 @@ class Complete {
     return is_path_;
   }
 
+  inline int CalcNumLinesNeeded(List& list) {
+    return static_cast<int>(std::ceil(
+        static_cast<float>(list.Size()) / static_cast<float>(num_cols_)));
+  }
+
   void PrintAttr();
 
  private:

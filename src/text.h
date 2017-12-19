@@ -8,6 +8,9 @@
 #include <iostream>
 #include <map>
 
+#include "log.h"
+#include "cursor.h"
+
 namespace readline {
 
 class Style {
@@ -177,10 +180,14 @@ struct ItemDescr {
  }
 
  void Print(size_t num_cols, size_t size_first_col) const {
+   LOG << "[ItemDescr.Print]\n";
    std::string spaces = "";
-   for (int i = 0; i < (size_first_col - label_.Length()); i++) {
+
+   LOG << "size_first_col: " << size_first_col << ", label_.Length(): " << label_.Length() << "\n";
+   for (int i = 0; i < (int(size_first_col) - int(label_.Length())); i++) {
      spaces += " ";
    }
+   LOG << "After loop [ItemDescr.Print]\n";
 
    size_t max_string_len = num_cols - size_first_col - 2;
    std::string descr;
@@ -193,6 +200,7 @@ struct ItemDescr {
    }
 
    std::cout << label_ << spaces << ": " << descr;
+   LOG << "end [ItemDescr.Print]\n";
  }
 
  size_t LabelLength() const {
@@ -222,7 +230,7 @@ struct ItemDescr {
 
 class List {
  public:
-  virtual void Print(size_t i, size_t num_cols) const = 0;
+  virtual void Print(size_t i) const = 0;
 
   virtual const std::string& Value(size_t i) const = 0;
 
@@ -264,7 +272,7 @@ class ListItem: public List {
     return *this;
   }
 
-  void Print(size_t i, size_t /*num_cols*/) const override {
+  void Print(size_t i) const override {
     items_[i].Print();
   }
 
@@ -318,8 +326,9 @@ class ListDescr: public List {
  public:
   explicit ListDescr(std::vector<ItemDescr>&& items)
       : items_(std::move(items))
-      , max_str_len_(0) {
-    for (const auto& e: items) {
+      , max_str_len_(0)
+      , num_cols_(Terminal::Size().cols) {
+    for (const auto& e: items_) {
       size_t len = e.LabelLength();
       if (len > max_str_len_) {
         max_str_len_ = len;
@@ -327,8 +336,9 @@ class ListDescr: public List {
     }
   }
 
-  void Print(size_t i, size_t num_cols) const override {
-    items_[i].Print(num_cols, max_str_len_);
+  void Print(size_t i) const override {
+    LOG << "ListDescr.Print: " << i << "\n";
+    items_[i].Print(num_cols_, max_str_len_);
   }
 
   const std::string& Value(size_t i) const override {
@@ -343,9 +353,23 @@ class ListDescr: public List {
     return items_.size();
   }
 
+  void EraseIf(std::function<bool(const std::string&)>&& fn) override {
+    items_.erase(std::remove_if(items_.begin(), items_.end(),
+        [&](ItemDescr& i) { return fn(i.Value()); }), items_.end());
+  }
+
+  bool Empty() const override {
+    return items_.empty();
+  }
+
+  size_t MaxStringLen() const override {
+    return num_cols_;
+  }
+
  private:
   std::vector<ItemDescr> items_;
   size_t max_str_len_;
+  size_t num_cols_;
 };
 
 }  // namespace readline

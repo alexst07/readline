@@ -92,8 +92,6 @@ void Complete::Hide() {
   total_items_ = 0;
   has_more_ = false;
   max_string_len_ = 0;
-  full_screen_mode_ = false;
-  all_items_mode_ = false;
   num_cols_ = 0;
 }
 
@@ -132,6 +130,18 @@ int Complete::Print(const std::vector<std::string>& args) {
       return 0;
     }
   }
+
+  // enter on full screen if the state was on this mode, and the items is more
+  // than calc lines
+  if (full_screen_mode_ || all_items_mode_) {
+    if (CalcNumLinesNeeded(*items_) > CalcMaxLines()) {
+      return FullScreenMenu();
+    }
+  }
+
+  // it have no need to enter on full mode, set the flags to false
+  full_screen_mode_ = false;
+  all_items_mode_ = false;
 
   return PrintList(*items_);
 }
@@ -223,8 +233,7 @@ int Complete::PrintItemsList(List& list) {
   total_items_ = list.Size();
 
   // calculates the number of needed lines
-  int num_lines = static_cast<int>(std::ceil(
-      static_cast<float>(list.Size()) / static_cast<float>(num_cols_)));
+  int num_lines = CalcNumLinesNeeded(list);
 
   // calculates where must be start line
   TermSize term_size = Terminal::Size();
@@ -273,10 +282,12 @@ int Complete::PrintItemsList(List& list) {
 
     if (i == item_sel_) {
       sel_content_ = list.Value(i);
-      std::cout << "\e[7m" << list.StrWithStyle(i) << "\033[0m";
+      std::cout << "\e[7m";
+      list.Print(i);
+      std::cout << "\033[0m";
       prompt_.ShowTip(list.Value(i));
     } else {
-      std::cout << list.Value(i);
+      list.Print(i);
     }
   }
 
