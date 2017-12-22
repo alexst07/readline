@@ -41,8 +41,9 @@ void Complete::PrintAttr() {
     "full_screen_mode_: " << full_screen_mode_ << ", " <<
     "full_screen_line_: " << full_screen_line_ << ", " <<
     "max_string_len_: " << max_string_len_ << ", " <<
-    "all_items_mode_: " << all_items_mode_ <<
-  "}\n";
+    "all_items_mode_: " << all_items_mode_ << ", " <<
+    "num_cols_: " << num_cols_ <<
+    "}\n";
 }
 
 void Complete::Show(const std::vector<std::string>& args, bool show_always) {
@@ -92,7 +93,6 @@ void Complete::Hide() {
   total_items_ = 0;
   has_more_ = false;
   max_string_len_ = 0;
-  num_cols_ = 0;
 }
 
 void Complete::CleanLines() {
@@ -134,8 +134,18 @@ int Complete::Print(const std::vector<std::string>& args) {
   // enter on full screen if the state was on this mode, and the items is more
   // than calc lines
   if (full_screen_mode_ || all_items_mode_) {
+    LOG << "[Print]:full_screen_mode_ || all_items_mode_\n";
     if (CalcNumLinesNeeded(*items_) > CalcMaxLines()) {
-      return FullScreenMenu();
+      LOG << "[Print]:CalcNumLinesNeeded(*items_) > CalcMaxLines()\n";
+      if (show_) {
+        CleanLines();
+      }
+
+      has_more_ = true;
+      item_sel_ = 1;
+      total_items_ = items_->Size();
+      //return FullScreenMenu();
+      return PrintList(*items_);
     }
   }
 
@@ -187,6 +197,7 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
 
 int Complete::PrintList(List& list) {
   LOG << "[PrintList]\n";
+  total_items_ = list.Size();
   PrintAttr();
   if (list.Size() <= 1) {
     return 0;
@@ -230,7 +241,6 @@ int Complete::PrintList(List& list) {
 int Complete::PrintItemsList(List& list) {
   LOG << "[PrintItemsList]\n";
   PrintAttr();
-  total_items_ = list.Size();
 
   // calculates the number of needed lines
   int num_lines = CalcNumLinesNeeded(list);
@@ -301,6 +311,10 @@ void Complete::PrintAllItems() {
   LOG << "[PrintAllItems]\n";
   int lines = 0;
 
+  if (num_cols_ == 0) {
+    num_cols_ = 1;
+  }
+
   for (size_t i = 0; i < items_->Size(); i++) {
     if (i%num_cols_ == 0 && i > 0) {
       ++lines;
@@ -323,6 +337,7 @@ void Complete::PrintAllItems() {
 
 int Complete::FullScreenMenu() {
   LOG << "[FullScreenMenu]\n";
+  PrintAttr();
   has_more_ = false;
 
   // calculate the size of menu

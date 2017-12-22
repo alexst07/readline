@@ -18,6 +18,12 @@ std::vector<std::string> SplitArgs(const std::string& line,
   boost::split(args, sub, boost::algorithm::is_space());
   bool new_arg = CheckNewArg(line, line_pos);
 
+  if (args.size() > 0) {
+    if (args.back().empty()) {
+      new_arg = false;
+    }
+  }
+
   // if the last arg is empty, insert empty string
   if (new_arg) {
     args.push_back("");
