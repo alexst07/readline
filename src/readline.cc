@@ -42,6 +42,7 @@ std::string Readline::Prompt(const Text& prompt) {
   // restore the former settings
   tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
 
+  std::cout << "\n";
   return line;
 }
 

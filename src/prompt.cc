@@ -25,18 +25,23 @@ Prompt::Prompt(const Text& str_prompt, History& hist, FuncComplete&& fn,
   cursor_.MoveToPos(0);
 }
 
-void Prompt::Enter() {
+bool Prompt::Enter() {
   if (IsInCompleteMode()) {
     EnterCompleteMode();
+    return true;
   } else if (tip_mode_) {
     AcceptTip();
+    return true;
   }
 
   if (hist_.IsInSearchMode()) {
     hist_.ExitSearchMode();
     Reprint();
     cursor_.MoveToPos(buf_.Str().length());
+    return true;
   }
+
+  return false;
 }
 
 void Prompt::EnterCompleteMode() {
@@ -397,6 +402,32 @@ void Prompt::Esq() {
   if (IsInCompleteMode()) {
     complete_.Hide();
   }
+}
+
+void Prompt::CleanScreen() {
+  // if it is on the first line already, we don't need do anything
+  if (cursor_.GetStartLine() == 1) {
+    return;
+  }
+
+  // calculate how many lines we have to add
+  int start_line = cursor_.GetStartLine();
+  int num_of_lines = NumOfLines();
+  int pos_line = start_line + num_of_lines - 1;
+  TermSize term_size = Terminal::Size();
+  int num_lines = term_size.lines;
+  int num_lines_to_add = num_lines - (num_lines - pos_line);
+
+  // insert lines, we need to insert num_lines + num_lines_to_add because
+  // we don't want overwrite nothing on terminal
+  for (int i = 0; i < num_lines + num_lines_to_add; i++) {
+    std::cout << '\n';
+  }
+
+  int new_start_line = cursor_.GetStartLine() - num_lines_to_add;
+  new_start_line = new_start_line <= 0?1:new_start_line;
+  cursor_.SetStartLine(new_start_line);
+  Reprint();
 }
 
 int Prompt::NumOfLines() {

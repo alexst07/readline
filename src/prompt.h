@@ -15,7 +15,7 @@ class Prompt {
   Prompt(const Text& str_prompt, History& hist, FuncComplete&& fn,
     FuncHighlight&& fn_highlight);
 
-  void Enter();
+  bool Enter();
 
   void Backspace();
 
@@ -52,6 +52,8 @@ class Prompt {
   void EnterCompleteMode();
 
   void AutoComplete();
+
+  void CleanScreen();
 
   int NumOfLines();
 

@@ -16,13 +16,22 @@ std::string KeyEvents::Loop(const Text& msg, FuncComplete&& fn,
     c = getchar();
 
     if (c == '\n') {
-      prompt.Enter();
-      goto START;
+      bool used = prompt.Enter();
+
+      if (used) {
+        goto START;
+      } else {
+        break;
+      }
     }
 
     switch (c) {
       case 8:  // CTRL+backspace
         prompt.RemoveBackwardToken();
+        break;
+
+      case 12:  // CTRL+L
+        prompt.CleanScreen();
         break;
 
       case 18:  // CTRL+backspace
