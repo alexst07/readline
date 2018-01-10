@@ -54,6 +54,10 @@ std::tuple<std::unique_ptr<List>, RetType, bool> RetList(
     std::vector<ItemDescr>&& plist_descr,
     const std::vector<std::string>& params, bool tip);
 
+std::wstring str2wstr(const std::string& str);
+
+std::string wstr2str(const std::wstring& wstr);
+
 }
 
 #endif  // READLINE_UTILS_H

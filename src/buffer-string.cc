@@ -11,21 +11,29 @@ void BufferString::PopBack() {
   }
 }
 
-const std::string& BufferString::Str() const {
+const std::wstring& BufferString::WStr() const {
   return content_;
 }
 
-BufferString& BufferString::operator=(const std::string& content) {
+BufferString& BufferString::operator=(const std::wstring& content) {
   content_ = content;
+
+  return *this;
 }
 
-BufferString operator+(const BufferString& bufstr, char c) {
-  std::string str = bufstr.content_ + c;
+BufferString& BufferString::operator=(const std::string& content) {
+  content_ = str2wstr(content);
+
+  return *this;
+}
+
+BufferString operator+(const BufferString& bufstr, wchar_t c) {
+  std::wstring str = bufstr.content_ + c;
 
   return BufferString(str);
 }
 
-BufferString& BufferString::operator+=(char c) {
+BufferString& BufferString::operator+=(wchar_t c) {
   content_ += c;
 
   return *this;
@@ -41,7 +49,7 @@ void BufferString::RemoveChar(int n) {
   }
 }
 
-void BufferString::AddChar(char c, int n) {
+void BufferString::AddChar(wchar_t c, int n) {
   if (content_.empty()) {
     content_ = c;
     return;
@@ -56,7 +64,7 @@ void BufferString::AddChar(char c, int n) {
   }
 }
 
-void BufferString::AddString(const std::string str, int n) {
+void BufferString::AddString(const std::wstring str, int n) {
   if (content_.empty()) {
     content_ = str;
     return;
@@ -71,7 +79,7 @@ void BufferString::AddString(const std::string str, int n) {
   }
 }
 
-void BufferString::ReplaceStringInterval(const std::string str,
+void BufferString::ReplaceStringInterval(const std::wstring str,
     int start, int end) {
   if (content_.empty()) {
     content_ = str;
@@ -219,15 +227,15 @@ int BufferString::EndArgPos(int n) {
   return pos;
 }
 
-std::string BufferString::GetTrimToken(int n) {
+std::wstring BufferString::GetTrimToken(int n) {
   int start = StartArgPos(n);
   int end = EndArgPos(n);
-  std::string str = content_.substr(start, end - start);
+  std::wstring str = content_.substr(start, end - start);
   boost::trim(str);
   return str;
 }
 
-std::string BufferString::GetSlice(int start, int end) {
+std::wstring BufferString::GetSlice(int start, int end) {
   return content_.substr(start, end - start);
 }
 
@@ -235,7 +243,7 @@ void BufferString::RemoveSubStr(int from, int to) {
   content_ = content_.erase(from, to - from);
 }
 
-std::ostream& operator<<(std::ostream& stream, BufferString& buf_str) {
+std::wostream& operator<<(std::wostream& stream, BufferString& buf_str) {
   stream  << buf_str.content_;
 
   return stream;

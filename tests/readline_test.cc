@@ -96,7 +96,7 @@ int main() {
   prompt << Style("\e[34m");
   prompt << ">> ";
   prompt << Style("\e[0m");
-  std::string line = readline.Prompt(prompt);
-  std::cout << "string: " << line << std::endl;
+  std::wstring line = readline.Prompt(prompt);
+  std::cout << "string: " << wstr2str(line) << std::endl;
   return 0;
 }

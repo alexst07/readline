@@ -3,17 +3,21 @@
 
 #include <string>
 
+#include "utils.h"
+
 namespace readline {
 
 class BufferString {
  public:
   BufferString() = default;
 
-  BufferString(const std::string& str): content_(str) {}
+  BufferString(const std::wstring& str): content_(str) {}
 
   BufferString(const BufferString& bufstr): content_(bufstr.content_) {}
 
   BufferString(BufferString&& bufstr): content_(std::move(bufstr.content_)) {}
+
+  BufferString& operator=(const std::wstring& content);
 
   BufferString& operator=(const std::string& content);
 
@@ -21,11 +25,11 @@ class BufferString {
 
   void RemoveChar(int n);
 
-  void AddChar(char c, int n);
+  void AddChar(wchar_t c, int n);
 
-  void AddString(const std::string str, int n);
+  void AddString(const std::wstring str, int n);
 
-  void ReplaceStringInterval(const std::string str, int start, int end);
+  void ReplaceStringInterval(const std::wstring str, int start, int end);
 
   bool IsTokenSeparator(int pos);
 
@@ -44,19 +48,19 @@ class BufferString {
 
   int EndArgPos(int n);
 
-  std::string GetTrimToken(int n);
+  std::wstring GetTrimToken(int n);
 
-  std::string GetSlice(int start, int end);
+  std::wstring GetSlice(int start, int end);
 
-  const std::string& Str() const;
+  const std::wstring& WStr() const;
 
-  friend BufferString operator+(const BufferString& bufstr, char c);
+  std::string Str() const {
+    return wstr2str(content_);
+  }
 
-  friend std::ostream& operator<<(std::ostream& stream, BufferString& buf_str);
+  BufferString& operator+=(wchar_t c);
 
-  BufferString& operator+=(char c);
-
-  char& operator[](int n) {
+  wchar_t& operator[](int n) {
     return content_[n];
   }
 
@@ -65,12 +69,16 @@ class BufferString {
   }
 
  private:
-  std::string content_;
+  friend BufferString operator+(const BufferString& bufstr, wchar_t c);
+
+  friend std::wostream& operator<<(std::wostream& stream, BufferString& buf_str);
+
+  std::wstring content_;
 };
 
-BufferString operator+(const BufferString& bufstr, char c);
+BufferString operator+(const BufferString& bufstr, wchar_t c);
 
-std::ostream& operator<<(std::ostream& stream, BufferString& buf_str);
+std::wostream& operator<<(std::wostream& stream, BufferString& buf_str);
 
 }  // namespace readline
 

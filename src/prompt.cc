@@ -11,7 +11,7 @@
 
 namespace readline {
 
-const char* SEARCH_PROMPT = "Search ";
+const wchar_t* SEARCH_PROMPT = L"Search ";
 
 Prompt::Prompt(const Text& str_prompt, History& hist, FuncComplete&& fn,
   FuncHighlight&& fn_highlight)
@@ -59,23 +59,23 @@ void Prompt::EnterCompleteMode() {
   if (complete_.IsPathComplete()) {
     // get the argument only until where is the cursor, becuase we want
     // eliminate the rest of the path
-    std::string trim_token = buf_.GetSlice(start_word, char_pos);
-    std::string arg_path_init;
+    std::wstring trim_token = buf_.GetSlice(start_word, char_pos);
+    std::wstring arg_path_init;
     std::string last_part;
-    size_t last_bar_pos = trim_token.find_last_of("/");
+    size_t last_bar_pos = trim_token.find_last_of('/');
 
     if (last_bar_pos != std::string::npos) {
       arg_path_init = trim_token.substr(0, last_bar_pos + 1);
     }
 
     // insert '/' on the end of directory
-    str_comp = DirectoryFormat(arg_path_init + str_comp);
+    str_comp = DirectoryFormat(wstr2str(arg_path_init) + str_comp);
   }
 
   int current_length = buf_.Length();
 
   // replace the trim token by the selected option
-  buf_.ReplaceStringInterval(str_comp, start_word, end_word);
+  buf_.ReplaceStringInterval(str2wstr(str_comp), start_word, end_word);
 
   complete_.Hide();
   end_word = buf_.EndArgPos(char_pos);
@@ -86,7 +86,7 @@ void Prompt::EnterCompleteMode() {
 
   // insert whitespace if it is in the end of string and is not directory
   if (char_pos == current_length && str_comp[str_comp.length() - 1] != '/') {
-    buf_.AddString(" ", buf_.Length());
+    buf_.AddString(L" ", buf_.Length());
     cursor_.MoveToPos(buf_.Length());
   }
 }
@@ -125,7 +125,7 @@ void Prompt::Backspace() {
   }
 }
 
-void Prompt::AddChar(char c) {
+void Prompt::AddChar(wchar_t c) {
   LOG << "[AddChar]\n";
 
   // if it is in search mode, only add a char on the end of search string
@@ -180,14 +180,13 @@ void Prompt::Search() {
   if (hist_.IsInSearchMode()) {
     SearchExec(search_cmd_);
   } else {
-    SearchExec(buf_.Str());
+    SearchExec(buf_.WStr());
   }
 }
 
-void Prompt::SearchExec(const std::string& search_cmd) {
+void Prompt::SearchExec(const std::wstring& search_cmd) {
   if (!hist_.IsInSearchMode() ||  search_cmd_ != search_cmd) {
-    LOG << "Prompt:SearchQuery" << search_cmd << "\n";
-    hist_.SearchQuery(search_cmd);
+    hist_.SearchQuery(wstr2str(search_cmd));
     search_cmd_ = search_cmd;
   }
 
@@ -236,7 +235,7 @@ void Prompt::UpArrow() {
       LOG << "UpArrow [History.HasNext]\n";
 
       if (!hist_.IsInHistMode()) {
-        current_cmd_ = buf_.Str();
+        current_cmd_ = buf_.WStr();
       }
 
       buf_ = hist_.GetNext() + " ";
@@ -461,7 +460,7 @@ void Prompt::ShowTip(std::string tip) {
   }
 
   original_tip_string_ = tip;
-  std::string trim_token = buf_.GetTrimToken(char_pos);
+  std::string trim_token = wstr2str(buf_.GetTrimToken(char_pos));
 
   // if it is tip for path, we have to handle different from a normal token
   // we have to calculate intersection string with last part of path
@@ -507,7 +506,7 @@ void Prompt::AcceptTip() {
     }
   }
 
-  buf_.AddString(is_path?tip_string_:tip_string_+ " ", buf_.Length());
+  buf_.AddString(str2wstr(is_path?tip_string_:tip_string_+ " "), buf_.Length());
 
   tip_string_ = "";
   HideTip();
@@ -554,9 +553,9 @@ void Prompt::SearchPrint() {
   EraseFromBeginToEnd();
 
   cursor_.MoveToAbsolute(cursor_.GetStartLine(), 1);
-  std::string promp_search = std::string(SEARCH_PROMPT) + "'" + search_cmd_ +
-      "': ";
-  std::string content = promp_search + buf_.Str();
+  std::wstring promp_search = std::wstring(SEARCH_PROMPT) + L"'" + search_cmd_ +
+      L"': ";
+  std::string content = wstr2str(promp_search) + buf_.Str();
   cursor_.SetStartCol(promp_search.length());
   std::cout << content << std::flush;
 }

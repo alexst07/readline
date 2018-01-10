@@ -19,7 +19,7 @@ class Prompt {
 
   void Backspace();
 
-  void AddChar(char c);
+  void AddChar(wchar_t c);
 
   void Search();
 
@@ -73,7 +73,11 @@ class Prompt {
     return cursor_;
   }
 
-  inline const std::string& Str() const {
+  inline const std::wstring& WStr() const {
+    return buf_.WStr();
+  }
+
+  inline const std::string Str() const {
     return buf_.Str();
   }
 
@@ -92,7 +96,7 @@ class Prompt {
 
   int PosCursonOnBuf();
 
-  void SearchExec(const std::string& search_cmd);
+  void SearchExec(const std::wstring& search_cmd);
 
   inline bool AlwaysShowComplete() {
     bool show_always = false;
@@ -111,8 +115,8 @@ class Prompt {
   std::string tip_string_;
   std::string original_tip_string_;
   History& hist_;
-  std::string current_cmd_;
-  std::string search_cmd_;
+  std::wstring current_cmd_;
+  std::wstring search_cmd_;
   FuncHighlight fn_highlight_;
 };
 

@@ -18,7 +18,7 @@ class Readline {
 
   void SetHighlightFunc(FuncHighlight&& fn);
 
-  std::string Prompt(const Text& prompt);
+  std::wstring Prompt(const Text& prompt);
 
   void AddHistoryString(const std::string cmd);
 

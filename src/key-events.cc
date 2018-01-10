@@ -6,10 +6,10 @@
 
 namespace readline {
 
-std::string KeyEvents::Loop(const Text& msg, FuncComplete&& fn,
+std::wstring KeyEvents::Loop(const Text& msg, FuncComplete&& fn,
     FuncHighlight&& fn_highlight) {
   Prompt prompt(msg, hist_, std::move(fn), std::move(fn_highlight));
-  unsigned char c;
+  wchar_t c;
 
   do {
   START:
@@ -62,7 +62,7 @@ std::string KeyEvents::Loop(const Text& msg, FuncComplete&& fn,
      }
   } while (c != '\n');
 
-  return prompt.Str();
+  return prompt.WStr();
 }
 
 void KeyEvents::CommandsKey(Prompt& prompt) {

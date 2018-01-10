@@ -263,4 +263,14 @@ std::tuple<std::unique_ptr<List>, RetType, bool> RetList(
           RetType::DESCR, false);
 }
 
+std::wstring str2wstr(const std::string& str) {
+  std::wstring ws_tmp(str.begin(), str.end());
+  return ws_tmp;
+}
+
+std::string wstr2str(const std::wstring& wstr) {
+  std::string tmp(wstr.begin(), wstr.end());
+  return tmp;
+}
+
 }
