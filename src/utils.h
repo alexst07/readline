@@ -4,7 +4,9 @@
 #include <memory>
 #include <vector>
 #include <string>
+
 #include "text.h"
+#include "complete.h"
 
 namespace readline {
 
@@ -40,6 +42,17 @@ std::tuple<std::string, std::string> ParserPath(const std::string& arg,
 std::string DirectoryFormat(const std::string& dir);
 
 bool IsDirectory(const std::string path);
+
+std::tuple<std::unique_ptr<List>, RetType, bool> RetDirFileList(
+    const std::vector<std::string>& params, bool tip, ListDirType type);
+
+std::tuple<std::unique_ptr<List>, RetType, bool> RetList(
+    std::vector<std::string>&& plist, const std::vector<std::string>& params,
+    bool tip);
+
+std::tuple<std::unique_ptr<List>, RetType, bool> RetList(
+    std::vector<ItemDescr>&& plist_descr,
+    const std::vector<std::string>& params, bool tip);
 
 }
 

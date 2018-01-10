@@ -200,4 +200,67 @@ bool IsDirectory(const std::string path) {
   return false;
 }
 
+std::tuple<std::unique_ptr<List>, RetType, bool> RetDirFileList(
+      const std::vector<std::string>& params, bool tip, ListDirType type) {
+  RetType ret_type = RetType::FILES_DIR;
+  bool is_path = false;
+
+  std::string last_arg = params.back();
+
+  std::string path;
+  std::string last_part;
+  std::tie(path, last_part) = ParserPath(last_arg);
+
+  if (IsDirectory(path)) {
+    is_path = true;
+    if (tip) {
+      auto items = ListDir(path, type);
+
+      if (!last_part.empty()) {
+        // uses only item that match
+        items = MatchArg(last_part, items);
+      }
+
+      return std::tuple<std::unique_ptr<List>, RetType, bool>(
+          std::unique_ptr<List>(new ListItem(items)), ret_type, is_path);
+    } else {
+      return std::tuple<std::unique_ptr<List>, RetType, bool>(
+          MatchDirList(params), ret_type, is_path);
+    }
+  }
+}
+
+std::tuple<std::unique_ptr<List>, RetType, bool> RetList(
+    std::vector<std::string>&& plist, const std::vector<std::string>& params,
+    bool tip) {
+  std::vector<std::string> list = std::move(plist);
+
+  if (tip) {
+    if (!params.back().empty()) {
+      // uses only item that match
+      list = MatchArg(params.back(), list);
+    }
+  }
+
+  return std::tuple<std::unique_ptr<List>, RetType, bool>(
+      std::unique_ptr<List>(new ListItem(list)), RetType::LIST, false);
+}
+
+std::tuple<std::unique_ptr<List>, RetType, bool> RetList(
+    std::vector<ItemDescr>&& plist_descr,
+    const std::vector<std::string>& params, bool tip) {
+  std::vector<ItemDescr> list_descr = std::move(plist_descr);
+
+  if (tip) {
+    if (!params.back().empty()) {
+      // uses only item that match
+      list_descr = MatchArg(params.back(), list_descr);
+    }
+  }
+
+  return std::tuple<std::unique_ptr<List>, RetType, bool>(
+      std::unique_ptr<List>(new ListDescr(std::move(list_descr))),
+          RetType::DESCR, false);
+}
+
 }

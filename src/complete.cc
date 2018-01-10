@@ -199,7 +199,7 @@ int Complete::PrintList(List& list) {
   LOG << "[PrintList]\n";
   total_items_ = list.Size();
   PrintAttr();
-  if (list.Size() <= 1) {
+  if (list.Size() == 0) {
     return 0;
   }
 
