@@ -327,10 +327,12 @@ void Complete::PrintAllItems() {
 
     if (i == item_sel_) {
       sel_content_ = items_->Value(i);
-      std::cout << "\e[7m" << items_->StrWithStyle(i) << "\033[0m";
+      std::cout << "\e[7m";
+      items_->Print(i);
+      std::cout << "\033[0m";
       prompt_.ShowTip(items_->Value(i));
     } else {
-      std::cout << items_->StrWithStyle(i);
+      items_->Print(i);
     }
   }
 }
@@ -339,6 +341,10 @@ int Complete::FullScreenMenu() {
   LOG << "[FullScreenMenu]\n";
   PrintAttr();
   has_more_ = false;
+
+  if (num_cols_ == 0) {
+    num_cols_ = 1;
+  }
 
   // calculate the size of menu
   TermSize term_size = Terminal::Size();
@@ -367,9 +373,11 @@ int Complete::FullScreenMenu() {
       static_cast<float>(items_->Size()) / static_cast<float>(num_cols_)));
 
   if (num_lines <= menu_size) {
+    LOG << ":: num_lines <= menu_size:" << num_lines  << " : " << menu_size << " [PrintAllItems]\n";
     PrintAllItems();
     return menu_size;
   } else {
+    LOG << ":: num_lines <= menu_size:" << num_lines  << " : " << menu_size << " [FullScreenMenuWithBar]\n";
     FullScreenMenuWithBar(menu_size);
     return menu_size;
   }
@@ -410,10 +418,12 @@ void Complete::FullScreenMenuWithBar(int menu_size) {
     if (i == item_sel_) {
       // print the selected item with different color, and update the tip
       sel_content_ = items_->Value(i);
-      std::cout << "\e[7m" << items_->StrWithStyle(i) << "\033[0m";
+      std::cout << "\e[7m";
+      items_->Print(i);
+      std::cout << "\033[0m";
       prompt_.ShowTip(items_->Value(i));
     } else {
-      std::cout << items_->Value(i);
+      items_->Print(i);
     }
   }
 
