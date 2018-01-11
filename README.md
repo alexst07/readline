@@ -22,7 +22,7 @@ make
 #### To test the project
 On build directory
 ```sh
-./test/readline
+./test/readline_test
 ```
 
 ## How to contribute
