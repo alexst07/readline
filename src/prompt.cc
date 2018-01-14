@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <boost/filesystem.hpp>
+
 #include "cursor.h"
 #include "complete.h"
 #include "utils.h"

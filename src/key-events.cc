@@ -46,6 +46,11 @@ std::wstring KeyEvents::Loop(const Text& msg, FuncComplete&& fn,
         prompt.Backspace();
         break;
 
+      case 195: // special chars
+        SpecialChars(prompt, c);
+        goto START;
+        break;
+
       case 27: {
         unsigned char c1 = getchar();
         if (c1 == 91) {
@@ -127,6 +132,13 @@ void KeyEvents::CtrlCommandsKey(Prompt& prompt) {
         break;
     }
   }
+}
+
+void KeyEvents::SpecialChars(Prompt& prompt, wchar_t c1) {
+  wchar_t c = getchar();
+  wchar_t ch = c1 | c;
+
+  prompt.AddChar(ch);
 }
 
 }  // namespace readline

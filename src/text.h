@@ -180,14 +180,11 @@ struct ItemDescr {
  }
 
  void Print(size_t num_cols, size_t size_first_col) const {
-   LOG << "[ItemDescr.Print]\n";
    std::string spaces = "";
 
-   LOG << "size_first_col: " << size_first_col << ", label_.Length(): " << label_.Length() << "\n";
    for (int i = 0; i < (int(size_first_col) - int(label_.Length())); i++) {
      spaces += " ";
    }
-   LOG << "After loop [ItemDescr.Print]\n";
 
    size_t max_string_len = num_cols - size_first_col - 2;
    std::string descr;
@@ -200,7 +197,6 @@ struct ItemDescr {
    }
 
    std::cout << label_ << spaces << ": " << descr;
-   LOG << "end [ItemDescr.Print]\n";
  }
 
  size_t LabelLength() const {

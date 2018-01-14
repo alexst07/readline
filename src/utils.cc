@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <string>
 #include <tuple>
+#include <codecvt>
+#include <locale>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
@@ -269,8 +272,8 @@ std::wstring str2wstr(const std::string& str) {
 }
 
 std::string wstr2str(const std::wstring& wstr) {
-  std::string tmp(wstr.begin(), wstr.end());
-  return tmp;
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv;
+  return myconv.to_bytes(wstr);
 }
 
 }

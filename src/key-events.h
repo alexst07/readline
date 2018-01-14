@@ -19,6 +19,8 @@ class KeyEvents {
   void CtrlCommandsKey(Prompt& prompt);
 
  private:
+  void SpecialChars(Prompt& prompt, wchar_t c1);
+
   History& hist_;
 };
 

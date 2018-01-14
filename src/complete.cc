@@ -309,7 +309,9 @@ int Complete::PrintItemsList(List& list) {
 
 void Complete::PrintAllItems() {
   LOG << "[PrintAllItems]\n";
+  PrintAttr();
   int lines = 0;
+  full_screen_mode_ = true;
 
   if (num_cols_ == 0) {
     num_cols_ = 1;

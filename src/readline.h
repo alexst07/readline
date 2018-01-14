@@ -12,7 +12,7 @@ namespace readline {
 
 class Readline {
  public:
-  Readline(): hist_(500) {}
+  Readline(size_t hist_size = 500): hist_(hist_size) {}
 
   void SetCompleteFunc(FuncComplete&& fn);
 
