@@ -7,18 +7,19 @@
 #include "complete.h"
 #include "history.h"
 #include "prompt.h"
+#include "utils.h"
 
 namespace readline {
 
 class Readline {
  public:
-  Readline(size_t hist_size = 500): hist_(hist_size) {}
+  Readline(size_t hist_size = 500);
 
   void SetCompleteFunc(FuncComplete&& fn);
 
   void SetHighlightFunc(FuncHighlight&& fn);
 
-  std::wstring Prompt(const Text& prompt);
+  std::string Prompt(const Text& prompt);
 
   void AddHistoryString(const std::string cmd);
 

@@ -1,13 +1,9 @@
 #include <iostream>
 
 #include "readline.h"
-#include "utils.h"
-#include "log.h"
 
 int main() {
   using namespace readline;
-
-  Log::Instance("log.txt");
 
   LOG << "TESTE_OTDER\n";
 
@@ -96,7 +92,7 @@ int main() {
   prompt << Style("\e[34m");
   prompt << ">> ";
   prompt << Style("\e[0m");
-  std::wstring line = readline.Prompt(prompt);
-  std::cout << "string: " << wstr2str(line) << std::endl;
+  std::string line = readline.Prompt(prompt);
+  std::cout << "string: " << line << std::endl;
   return 0;
 }

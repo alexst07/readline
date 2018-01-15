@@ -5,10 +5,15 @@
 #include <termios.h>
 #include <iostream>
 #include <sys/types.h>
+#include <boost/algorithm/string.hpp>
 
 #include "key-events.h"
 
 namespace readline {
+
+Readline::Readline(size_t hist_size): hist_(hist_size) {
+  Log::Instance("log.txt");
+}
 
 void Readline::SetCompleteFunc(FuncComplete&& fn) {
   fn_complete_ = std::move(fn);
@@ -18,7 +23,7 @@ void Readline::SetHighlightFunc(FuncHighlight&& fn) {
   fn_highlight_ = std::move(fn);
 }
 
-std::wstring Readline::Prompt(const Text& prompt) {
+std::string Readline::Prompt(const Text& prompt) {
   FuncComplete fn(fn_complete_);
   FuncHighlight fn_highlight(fn_highlight_);
   struct termios old_tio, new_tio;
@@ -43,7 +48,9 @@ std::wstring Readline::Prompt(const Text& prompt) {
   tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
 
   std::cout << "\n";
-  return line;
+  std::string ret_line = wstr2str(line);
+  boost::trim(ret_line);
+  return ret_line;
 }
 
 void Readline::AddHistoryString(const std::string cmd) {
