@@ -3,11 +3,12 @@
 #include <iostream>
 #include <string>
 #include <stdio.h>
+#include <boost/optional.hpp>
 
 namespace readline {
 
-std::wstring KeyEvents::Loop(const Text& msg, FuncComplete&& fn,
-    FuncHighlight&& fn_highlight) {
+boost::optional<std::wstring> KeyEvents::Loop(const Text& msg,
+    FuncComplete&& fn, FuncHighlight&& fn_highlight) {
   Prompt prompt(msg, hist_, std::move(fn), std::move(fn_highlight));
   wchar_t c;
 
@@ -26,6 +27,10 @@ std::wstring KeyEvents::Loop(const Text& msg, FuncComplete&& fn,
     }
 
     switch (c) {
+      case 4:  // CTRL+D
+        return boost::optional<std::wstring>{};
+        break;
+
       case 8:  // CTRL+backspace
         prompt.RemoveBackwardToken();
         break;

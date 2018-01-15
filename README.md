@@ -87,10 +87,14 @@ int main() {
   prompt << Style("\e[0m");
 
   // This method in fact call the line
-  std::string line = readline.Prompt(prompt);
+  boost::optional<std::string> line = readline.Prompt(prompt);
 
-  // Print the result
-  std::cout << "string: " << line << std::endl;
+  if (line) {
+    std::cout << "string: " << *line << std::endl;
+  } else {
+    std::cout << "exited\n";
+  }
+
   return 0;
 }
 ```

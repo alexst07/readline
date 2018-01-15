@@ -3,6 +3,7 @@
 
 #include <string>
 #include <functional>
+#include <boost/optional.hpp>
 
 #include "complete.h"
 #include "history.h"
@@ -19,7 +20,7 @@ class Readline {
 
   void SetHighlightFunc(FuncHighlight&& fn);
 
-  std::string Prompt(const Text& prompt);
+  boost::optional<std::string> Prompt(const Text& prompt);
 
   void AddHistoryString(const std::string cmd);
 

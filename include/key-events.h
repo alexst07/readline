@@ -1,6 +1,8 @@
 #ifndef READLINE_KEY_EVENTS_H
 #define READLINE_KEY_EVENTS_H
 
+#include <string>
+#include <boost/optional.hpp>
 #include "cursor.h"
 #include "prompt.h"
 #include "history.h"
@@ -11,7 +13,7 @@ class KeyEvents {
  public:
   KeyEvents(History& hist): hist_(hist) {}
 
-  std::wstring Loop(const Text& msg, FuncComplete&& fn,
+  boost::optional<std::wstring> Loop(const Text& msg, FuncComplete&& fn,
       FuncHighlight&& fn_highlight);
 
   void CommandsKey(Prompt& prompt);
