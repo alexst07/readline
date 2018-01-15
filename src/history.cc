@@ -136,4 +136,12 @@ void History::ExitSearchMode() {
   search_mode_ = false;
 }
 
+const std::list<std::string>& History::GetList() const {
+  return list_;
+}
+
+size_t History::Count() const {
+  return list_.size();
+}
+
 }

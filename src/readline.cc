@@ -57,4 +57,12 @@ void Readline::AddHistoryString(const std::string cmd) {
   hist_.Push(cmd);
 }
 
+const std::list<std::string>& Readline::GetHistoryList() const {
+  return hist_.GetList();
+}
+
+size_t Readline::CountHistoryItems() const {
+  return hist_.Count();
+}
+
 }  // namespace readline

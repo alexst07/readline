@@ -38,8 +38,7 @@ target_link_libraries(readlinepp termcap
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY})
 
-SET(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/readlinepp")
-install(TARGETS readlinepp DESTINATION "lib")
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION "include")
+install(TARGETS readlinepp DESTINATION "lib/readlinepp/")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION "include/readlinepp/")
 
 add_subdirectory(tests)

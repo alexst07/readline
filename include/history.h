@@ -37,6 +37,10 @@ class History {
 
   void ExitSearchMode();
 
+  const std::list<std::string>& GetList() const;
+
+  size_t Count() const;
+
   private:
    size_t size_;
    std::list<std::string> list_;

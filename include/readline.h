@@ -23,6 +23,10 @@ class Readline {
 
   void AddHistoryString(const std::string cmd);
 
+  const std::list<std::string>& GetHistoryList() const;
+
+  size_t CountHistoryItems() const;
+
  private:
   FuncComplete fn_complete_;
   FuncHighlight fn_highlight_;
