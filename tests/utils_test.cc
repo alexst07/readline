@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "src/utils.h"
+#include "utils.h"
 
 int main() {
   using namespace readline;

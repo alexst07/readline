@@ -28,6 +28,7 @@ find_package(Threads REQUIRED)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 
@@ -36,5 +37,9 @@ add_library(readlinepp SHARED ${SOURCES})
 target_link_libraries(readlinepp termcap
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY})
+
+SET(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/readlinepp")
+install(TARGETS readlinepp DESTINATION "lib")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION "include")
 
 add_subdirectory(tests)

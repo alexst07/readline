@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "src/readline.h"
-#include "src/utils.h"
-#include "src/log.h"
+#include "readline.h"
+#include "utils.h"
+#include "log.h"
 
 int main() {
   using namespace readline;
