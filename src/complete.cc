@@ -112,7 +112,7 @@ int Complete::Print(const std::vector<std::string>& args) {
   if (fn_complete_) {
     RetType ret_type;
     std::tie(items_, ret_type, is_path_) = fn_complete_(args, false);
-    if (!is_path_) {
+    if (!is_path_ && items_) {
       MatchArg(args.back(), &*items_);
     }
   } else {
@@ -129,6 +129,10 @@ int Complete::Print(const std::vector<std::string>& args) {
       is_path_ = false;
       return 0;
     }
+  }
+
+  if (!items_) {
+    return 0;
   }
 
   // enter on full screen if the state was on this mode, and the items is more
@@ -164,9 +168,11 @@ void Complete::CompleteTip(const std::vector<std::string>& args) {
     RetType ret_type;
     std::tie(list_items, ret_type, is_path_) = fn_complete_(args, true);
 
-    if (list_items->Size() == 1) {
-      sel_content_ = list_items->Value(0);
-      prompt_.ShowTip(list_items->Value(0));
+    if (list_items) {
+      if (list_items->Size() == 1) {
+        sel_content_ = list_items->Value(0);
+        prompt_.ShowTip(list_items->Value(0));
+      }
     }
   } else {
     std::vector<std::string> items;

@@ -231,6 +231,9 @@ std::tuple<std::unique_ptr<List>, RetType, bool> RetDirFileList(
           MatchDirList(params), ret_type, is_path);
     }
   }
+
+  return std::tuple<std::unique_ptr<List>, RetType, bool>(
+      std::unique_ptr<List>(nullptr), ret_type, is_path);
 }
 
 std::tuple<std::unique_ptr<List>, RetType, bool> RetList(
