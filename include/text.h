@@ -65,7 +65,10 @@ class Text {
   }
 
   size_t Length() const {
-    return str_.length();
+    int len = 0;
+    const char* s = str_.data();
+    while (*s) len += (*s++ & 0xc0) != 0x80;
+    return len;
   }
 
   friend Text operator+ (const Text& text, const std::string& val);

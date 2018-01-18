@@ -43,7 +43,7 @@ boost::optional<std::string> Readline::Prompt(const Text& prompt) {
   tcsetattr(STDIN_FILENO,TCSANOW,&new_tio);
 
   boost::optional<std::wstring> line = key_events.Loop(prompt, std::move(fn),
-      std::move(fn_highlight_));
+      std::move(fn_highlight));
 
   // restore the former settings
   tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);

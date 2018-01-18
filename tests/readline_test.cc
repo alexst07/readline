@@ -92,12 +92,16 @@ int main() {
   prompt << Style("\e[34m");
   prompt << ">> ";
   prompt << Style("\e[0m");
-  boost::optional<std::string> line = readline.Prompt(prompt);
 
-  if (line) {
-    std::cout << "string: " << *line << std::endl;
-  } else {
-    std::cout << "exited\n";
+  while (true) {
+    boost::optional<std::string> line = readline.Prompt(prompt);
+
+    if (line) {
+      std::cout << "string: " << *line << std::endl;
+    } else {
+      std::cout << "exited\n";
+      break;
+    }
   }
 
   return 0;
