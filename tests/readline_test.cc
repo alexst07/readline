@@ -94,7 +94,14 @@ int main() {
   prompt << Style("\e[0m");
 
   while (true) {
-    boost::optional<std::string> line = readline.Prompt(prompt);
+    boost::optional<std::string> line;
+
+    try {
+      line = readline.Prompt(prompt);
+    } catch (std::range_error&) {
+      std::cout << "exited\n";
+      break;
+    }
 
     if (line) {
       std::cout << "string: " << *line << std::endl;
